@@ -1061,6 +1061,24 @@ input.montant { width: 90px; padding: 7px 8px; border: 1px solid var(--border); 
 }
 @media (max-width: 380px) { .appel-grid { grid-template-columns: 1fr 1fr; } }
 
+/* ================= CLUBS ================= */
+.clubs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.club-carte { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+.club-carte > img, .club-sans-image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.club-carte > img { cursor: zoom-in; }
+.club-sans-image { display: grid; place-items: center; font-size: 46px; background: linear-gradient(120deg, var(--primary-light), var(--accent-light)); }
+.club-carte.payant .club-sans-image { background: linear-gradient(120deg, #fff1dc, var(--accent-light)); }
+.club-corps { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; flex: 1; }
+.club-corps .item-head { width: 100%; gap: 8px; }
+.club-corps strong { font-family: var(--titre); font-size: 18px; color: var(--sidebar); }
+.club-ok { color: var(--success); font-weight: 700; }
+.club-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding-top: 6px; }
+.club-inscrits { width: 100%; }
+.club-inscrits summary { cursor: pointer; font-weight: 700; color: var(--primary); }
+.club-inscrits ul { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.club-inscrits li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+@media (max-width: 860px) { .clubs-grid { grid-template-columns: 1fr; } }
+
 /* ================= CANTINE ================= */
 .onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
 .onglets button { border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 10px 16px; border-radius: 999px;

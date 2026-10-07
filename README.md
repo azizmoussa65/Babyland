@@ -122,6 +122,14 @@ Pour l'App Store : compte Apple Developer (99 $/an) et un serveur en **HTTPS** (
   cantine, puis « Enregistrer » (« Tous les jours » en un appui). Un jour se change **jusqu'à la veille** ;
   l'administration reçoit une notification avec les jours choisis.
 
+### Clubs
+- **Administration** (page « Clubs ») : crée, modifie ou supprime un club : nom, type, jour et heure, description, image.
+  - Club **inclus** : gratuit, tous les enfants en profitent (rien à faire pour les parents).
+  - Club **payant** : prix (DT / mois) et nombre de places (optionnel) ; liste des inscrits, avec « Retirer ».
+  Les parents sont prévenus à la création d'un club.
+- **Parent** (page « Clubs ») : pour chaque enfant, les clubs inclus, et les clubs payants avec « Inscrire » /
+  « Désinscrire » (refusé si le club est complet) ; l'administration reçoit une notification.
+
 ### Autres pages
 - **Emplois du temps** : une photo (ou un PDF) par classe, prise avec le téléphone → envoyée tout de suite aux parents
   de la classe avec une notification. Une nouvelle photo remplace l'ancienne.
@@ -163,6 +171,8 @@ Pour l'App Store : compte Apple Developer (99 $/an) et un serveur en **HTTPS** (
 | POST/PATCH/DELETE | `/api/users` (administrateurs) | administration |
 | POST | `/api/reclamations` (formulaire + pièce jointe) | parent |
 | PATCH | `/api/reclamations/:id/traiter` (réponse optionnelle) | administration |
+| POST/PUT/DELETE | `/api/clubs` (club + image) → parents | administration |
+| POST/DELETE | `/api/clubs/:id/inscriptions` (club payant) | parent (DELETE : aussi l'administration) |
 | POST/DELETE | `/api/notes-eleves` (note sur un élève + pièce jointe) → ses parents | administration |
 | PUT | `/api/cantine/reservations` (jours de cantine d'un enfant, semaine du menu) | parent |
 | POST/DELETE | `/api/cantine/menus` (photo du menu, remplace l'ancien) → tous les parents | administration |

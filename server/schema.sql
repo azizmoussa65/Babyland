@@ -128,6 +128,28 @@ CREATE TABLE IF NOT EXISTS notes_eleves (
 );
 CREATE INDEX IF NOT EXISTS idx_notes_eleves ON notes_eleves(eleve_id, created_at DESC);
 
+-- Clubs : « inclus » (pour tous les enfants, sans inscription) ou « payant » (le parent y inscrit son enfant)
+CREATE TABLE IF NOT EXISTS clubs (
+  id          SERIAL PRIMARY KEY,
+  nom         TEXT NOT NULL,
+  type        TEXT NOT NULL CHECK (type IN ('inclus', 'payant')),
+  description TEXT,
+  horaire     TEXT,                              -- ex. « Mercredi 14 h – 15 h »
+  prix        NUMERIC(8, 3),                     -- en dinars, par mois (clubs payants)
+  places      INTEGER,                           -- nombre de places (vide = sans limite)
+  image_id    UUID REFERENCES fichiers(id) ON DELETE SET NULL,
+  cree_par    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Inscriptions aux clubs payants, faites par le parent
+CREATE TABLE IF NOT EXISTS club_inscriptions (
+  club_id     INTEGER NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  eleve_id    INTEGER NOT NULL REFERENCES eleves(id) ON DELETE CASCADE,
+  parent_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (club_id, eleve_id)
+);
+
 CREATE TABLE IF NOT EXISTS reclamations (
   id            SERIAL PRIMARY KEY,
   parent_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

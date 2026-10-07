@@ -20,7 +20,7 @@ function ouvertureAppel(creneau) {
 }
 const heureTunis = () => new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Tunis', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const ROLES = { admin: 'Administration', parent: 'Parents' };
-const ICONES = { absence: '📋', reclamation: '📩', emploi: '🗓️', evenement: '🎉', cours: '📚', travail: '📝', enfant: '🧒', cantine: '🍽️', note: '📒' };
+const ICONES = { absence: '📋', reclamation: '📩', emploi: '🗓️', evenement: '🎉', cours: '📚', travail: '📝', enfant: '🧒', cantine: '🍽️', note: '📒', club: '🎨' };
 const PUBLICATIONS = {
   cours: { titre: 'Cours du jour', icone: '📚', vide: 'Aucun cours envoyé.' },
   travail: { titre: 'Travail à la maison', icone: '📝', vide: 'Aucun travail à la maison.' }
@@ -32,7 +32,7 @@ const MAX_PHOTOS = 8;
 // ================= ÉTAT =================
 const VIDE = { users: [], parents: [], eleves: [], enfants: [], emplois: [], absences: [], publications: [],
   reclamations: [], notifications: [], evenements: [], classes: [],
-  notesEleves: [], cantineReservations: [], cantineMenus: [] };
+  notesEleves: [], clubs: [], clubInscriptions: [], cantineReservations: [], cantineMenus: [] };
 let DB = { ...VIDE };     // copie locale des données reçues du serveur
 let user = null;          // utilisateur connecté
 let token = null;         // jeton de session
@@ -174,8 +174,8 @@ async function lireNotifsOuvertes() {
 // Page ouverte quand on touche une notification (dans la liste ou dans la barre du téléphone)
 const PAGE_NOTIF = {
   parent: { cantine: 'cantineParent', absence: 'absencesParent', cours: 'coursParent', travail: 'travailParent',
-    emploi: 'emploiParent', evenement: 'evenements', reclamation: 'messages', note: 'messages', enfant: 'dashboard' },
-  admin: { cantine: 'cantine', absence: 'appel', reclamation: 'reclamations', note: 'reclamations', evenement: 'evenements', cours: 'cours', travail: 'travail' }
+    emploi: 'emploiParent', evenement: 'evenements', reclamation: 'messages', note: 'messages', club: 'clubsParent', enfant: 'dashboard' },
+  admin: { cantine: 'cantine', absence: 'appel', reclamation: 'reclamations', note: 'reclamations', club: 'clubs', evenement: 'evenements', cours: 'cours', travail: 'travail' }
 };
 function ouvrirDepuisNotif(type, texte = '') {
   const page = user && (PAGE_NOTIF[user.role] || {})[type];
@@ -431,6 +431,7 @@ function deconnecter() {
   photosPub = [];
   photoMenu = null;
   choixCantine = {};
+  clubEdite = null;
   photoEmploi = null;
   stocker('lamarelle-token', null);
   document.removeEventListener('click', premiereTouche, true);
@@ -454,6 +455,7 @@ const MENU_EQUIPE = [
   ['classes', '🏫', 'Classes'],
   ['emplois', '🗓️', 'Emplois du temps'],
   ['evenements', '🎉', 'Événements'],
+  ['clubs', '🎨', 'Clubs'],
   ['reclamations', '📩', 'Réclamations']
 ];
 const MENUS = {
@@ -466,6 +468,7 @@ const MENUS = {
     ['cantineParent', '🍽️', 'Cantine'],
     ['emploiParent', '🗓️', 'Emploi du temps'],
     ['evenements', '🎉', 'Événements'],
+    ['clubsParent', '🎨', 'Clubs'],
     ['messages', '✉️', 'Réclamations'],
     ['notifs', '🔔', 'Notifications'],
     ['profil', '👤', 'Mon profil']
@@ -476,7 +479,7 @@ const MENUS = {
 const ONGLET_COURT = {
   dashboard: 'Accueil', appel: 'Appel', cours: 'Cours', travail: 'Travail', eleves: 'Élèves', parents: 'Parents',
   coursParent: 'Cours', travailParent: 'Travail', absencesParent: 'Absences', emploiParent: 'Emploi',
-  notifs: 'Notifs', evenements: 'Événements', messages: 'Messages', profil: 'Profil', cantine: 'Cantine', cantineParent: 'Cantine'
+  notifs: 'Notifs', evenements: 'Événements', messages: 'Messages', profil: 'Profil', cantine: 'Cantine', cantineParent: 'Cantine', clubs: 'Clubs', clubsParent: 'Clubs'
 };
 
 // Liste des classes (dans l'ordre de la page « Classes »)
@@ -1431,6 +1434,96 @@ function vuePublications(type) {
       ${liste.length ? parJour(liste, p => cartePublication(p, { gestion: true })) : vide(t.vide)}`);
 }
 
+// ================= CLUBS =================
+// Clubs « inclus » : tous les enfants en profitent, sans inscription. Clubs « payants » : le parent y inscrit
+// son enfant (page « Clubs »), l'administration voit les inscrits et peut en retirer.
+let clubEdite = null;      // id du club en cours de modification (administration)
+const clubsDe = type => DB.clubs.filter(c => c.type === type);
+const inscritClub = (clubId, eleveId) => DB.clubInscriptions.some(i => i.clubId === clubId && i.eleveId === eleveId);
+const prixClub = p => (p === null || p === undefined ? '' : `${Number(p).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT / mois`);
+const placesRestantes = c => (c.places ? c.places - c.inscrits : null);
+
+// Formulaire (création « cl », modification « ce »)
+function champsClub(c, p) {
+  const payant = c.type === 'payant';
+  return `<div class="field"><label for="${p}-nom">Nom du club</label>
+      <input id="${p}-nom" required maxlength="80" value="${esc(c.nom || '')}" placeholder="Ex : Club de danse"></div>
+    <div class="field"><label for="${p}-type">Type</label><select id="${p}-type" onchange="majTypeClub('${p}')">
+      ${options([['inclus', 'Inclus (gratuit, pour tous les enfants)'], ['payant', 'Payant (le parent inscrit son enfant)']], c.type || 'inclus')}</select></div>
+    <div class="field"><label for="${p}-horaire">Jour et heure</label>
+      <input id="${p}-horaire" maxlength="120" value="${esc(c.horaire || '')}" placeholder="Ex : Mercredi 14 h – 15 h"></div>
+    <div class="field ${payant ? '' : 'hidden'}" id="${p}-champ-prix"><label for="${p}-prix">Prix (DT / mois)</label>
+      <input id="${p}-prix" type="number" min="0" step="0.5" value="${c.prix ?? ''}" placeholder="Ex : 40"></div>
+    <div class="field ${payant ? '' : 'hidden'}" id="${p}-champ-places"><label for="${p}-places">Places <span class="muted small">(vide = sans limite)</span></label>
+      <input id="${p}-places" type="number" min="1" step="1" value="${c.places ?? ''}"></div>
+    <div class="field full"><label for="${p}-description">Description</label>
+      <textarea id="${p}-description" maxlength="1000" placeholder="Ce que font les enfants dans ce club…">${esc(c.description || '')}</textarea></div>
+    <div class="field full"><label>Image <span class="muted small">(optionnelle)</span></label>
+      <label class="upload"><input id="${p}-image" type="file" accept="image/*" onchange="apercuFichier(this,'${p}-image-nom')">
+        <span>🖼️ ${c.imageId ? "Changer l'image" : 'Choisir une image'}</span></label><div id="${p}-image-nom" class="small muted"></div></div>`;
+}
+function majTypeClub(p) {
+  const payant = val(p + '-type') === 'payant';
+  ['prix', 'places'].forEach(k => $(`${p}-champ-${k}`).classList.toggle('hidden', !payant));
+}
+async function enregistrerClub(e, id) {
+  e.preventDefault();
+  const p = id ? 'ce' : 'cl', form = new FormData();
+  for (const k of ['nom', 'type', 'horaire', 'prix', 'places', 'description']) form.append(k, val(`${p}-${k}`));
+  if (!(await ajouterFichier(form, `${p}-image`, { imageSeulement: true }))) return;
+  const r = await envoyerFormulaire(e, id ? '/clubs/' + id : '/clubs', form,
+    id ? 'Club modifié ✔' : 'Club créé ✔ Les parents sont prévenus', id ? 'PUT' : 'POST');
+  if (r && id) { clubEdite = null; rafraichir(); }
+}
+function supprimerClub(id) {
+  const c = DB.clubs.find(x => x.id === id);
+  if (!c || !confirm(`Supprimer le club « ${c.nom} » ?${c.inscrits ? ' Les parents des enfants inscrits seront prévenus.' : ''}`)) return;
+  action(api('/clubs/' + id, { method: 'DELETE' }), 'Club supprimé');
+}
+function inscrireClub(clubId, eleveId) {
+  const c = DB.clubs.find(x => x.id === clubId), e = eleveDe(eleveId);
+  if (!c || !e || !confirm(`Inscrire ${e.nom.split(' ')[0]} au club « ${c.nom} »${c.prix !== null ? ` (${prixClub(c.prix)})` : ''} ?`)) return;
+  action(api(`/clubs/${clubId}/inscriptions`, { method: 'POST', body: { eleveId } }), 'Inscription au club enregistrée ✔');
+}
+function desinscrireClub(clubId, eleveId) {
+  const c = DB.clubs.find(x => x.id === clubId), e = eleveDe(eleveId);
+  if (!c || !confirm(`Désinscrire ${e ? e.nom : "l'enfant"} du club « ${c.nom} » ?`)) return;
+  action(api(`/clubs/${clubId}/inscriptions/${eleveId}`, { method: 'DELETE' }), 'Désinscription enregistrée');
+}
+// Carte d'un club ; enfant = Espace Parents (bouton d'inscription), gestion = administration (inscrits, modifier)
+function carteClub(c, { gestion = false, enfant = null } = {}) {
+  const payant = c.type === 'payant', reste = placesRestantes(c), prenom = enfant ? esc(enfant.nom.split(' ')[0]) : '';
+  const inscrits = gestion && payant ? DB.clubInscriptions.filter(i => i.clubId === c.id)
+    .map(i => ({ ...i, eleve: eleveDe(i.eleveId) })).filter(i => i.eleve).sort((a, b) => parNom(a.eleve, b.eleve)) : [];
+  const pris = enfant && inscritClub(c.id, enfant.id);
+  const image = c.imageId ? `<img src="${urlFichier(c.imageId)}" alt="" loading="lazy" onclick="voirPhoto('${urlFichier(c.imageId)}')">` : '<div class="club-sans-image">🎨</div>';
+  let suite = '';
+  if (!payant) suite = enfant ? `<p class="small club-ok">✔ ${prenom} en profite, sans inscription</p>` : '<p class="small muted">Pour tous les enfants, sans inscription</p>';
+  else {
+    suite = `<p class="small muted">${c.places ? `${c.inscrits} / ${c.places} place(s) prise(s)${reste <= 0 ? ' · <b>complet</b>' : ''}` : `${c.inscrits} inscrit(s)`}</p>`;
+    if (enfant) suite += pris
+      ? `<div class="club-actions"><span class="badge badge-ok">✔ ${prenom} est inscrit(e)</span>
+          <button class="btn btn-light btn-sm" onclick="desinscrireClub('${c.id}','${enfant.id}')">Désinscrire</button></div>`
+      : reste !== null && reste <= 0 ? '<button class="btn btn-light btn-sm" disabled>Complet</button>'
+        : `<button class="btn btn-primary btn-sm" onclick="inscrireClub('${c.id}','${enfant.id}')">✅ Inscrire ${prenom}</button>`;
+    if (gestion) suite += inscrits.length ? `<details class="club-inscrits"><summary>Voir les inscrits (${inscrits.length})</summary><ul>
+        ${inscrits.map(i => `<li><span class="chip-lien">${avatar(i.eleve)}<b>${esc(i.eleve.nom)}</b></span>
+          <span class="small muted">${esc(i.eleve.classe)} · ${esc(i.parentNom || '')} ${i.parentTel ? lienTel(i.parentTel) : ''}</span>
+          <button class="btn btn-light btn-sm" onclick="desinscrireClub('${c.id}','${i.eleveId}')">Retirer</button></li>`).join('')}</ul></details>`
+      : '<p class="small muted">Aucun inscrit pour le moment.</p>';
+  }
+  return `<div class="club-carte ${c.type}">${image}
+    <div class="club-corps">
+      <div class="item-head"><strong>${esc(c.nom)}</strong>${payant ? `<span class="badge badge-wait">${esc(prixClub(c.prix) || 'Payant')}</span>` : '<span class="badge badge-ok">Inclus</span>'}</div>
+      ${c.horaire ? `<p class="small">🕒 ${esc(c.horaire)}</p>` : ''}
+      ${c.description ? `<p class="pub-texte">${esc(c.description)}</p>` : ''}
+      ${suite}
+      ${gestion ? `<div class="club-actions"><button class="btn btn-light btn-sm" onclick="clubEdite='${c.id}';rafraichir()">✏️ Modifier</button>
+        <button class="btn btn-danger btn-sm" onclick="supprimerClub('${c.id}')">Supprimer</button></div>` : ''}
+    </div></div>`;
+}
+const grilleClubs = (liste, opts) => `<div class="clubs-grid">${liste.map(c => carteClub(c, opts)).join('')}</div>`;
+
 // ================= ÉVÉNEMENTS (Administration → parents) =================
 async function creerEvenement(e) {
   e.preventDefault();
@@ -2207,6 +2300,34 @@ const VUES = {
   emplois() { return vueEmplois(); },
 
   // ----- Événements (création : administration ; tous les parents les voient) -----
+  // ----- Clubs : administration -----
+  clubs() {
+    const edite = clubEdite && DB.clubs.find(c => c.id === clubEdite);
+    const inclus = clubsDe('inclus'), payants = clubsDe('payant');
+    return carte(edite ? `✏️ Modifier le club « ${esc(edite.nom)} »` : '🎨 Créer un club', `
+        <p class="muted" style="margin-bottom:14px">Club <b>inclus</b> : tous les enfants en profitent, rien à faire pour les parents.
+          Club <b>payant</b> : les parents inscrivent leur enfant depuis leur espace (page « Clubs ») et vous êtes prévenu(e).</p>
+        <form class="grid-form" onsubmit="enregistrerClub(event${edite ? `,'${edite.id}'` : ''})">
+          ${champsClub(edite || {}, edite ? 'ce' : 'cl')}
+          <div class="field full profil-boutons"><button class="btn btn-primary">${edite ? '💾 Enregistrer' : '➕ Créer le club'}</button>
+            ${edite ? '<button type="button" class="btn btn-light" onclick="clubEdite=null;rafraichir()">Annuler</button>' : ''}</div>
+        </form>`)
+      + carte(`🎨 Clubs inclus (${inclus.length})`, inclus.length ? grilleClubs(inclus, { gestion: true }) : vide('Aucun club inclus.'))
+      + carte(`⭐ Clubs payants (${payants.length})`, payants.length ? grilleClubs(payants, { gestion: true }) : vide('Aucun club payant.'));
+  },
+
+  // ----- Clubs : Espace Parents (inscription aux clubs payants, enfant par enfant) -----
+  clubsParent() {
+    const e = enfant();
+    if (!e) return sansEnfant();
+    const inclus = clubsDe('inclus'), payants = clubsDe('payant'), prenom = esc(e.nom.split(' ')[0]);
+    return selecteurEnfants()
+      + carte(`🎨 Clubs inclus pour ${prenom}`, inclus.length ? grilleClubs(inclus, { enfant: e }) : vide("Pas encore de club inclus."))
+      + carte(`⭐ Clubs payants`, payants.length
+        ? `<p class="muted" style="margin-bottom:12px">Choisissez les clubs où va <b>${prenom}</b> : l'école est prévenue tout de suite.</p>${grilleClubs(payants, { enfant: e })}`
+        : vide("Pas encore de club payant."));
+  },
+
   evenements() {
     const gestion = user.role !== 'parent';
     const aVenir = evenementsAVenir();

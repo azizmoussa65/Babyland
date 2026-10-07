@@ -64,6 +64,12 @@ const SQL = {
                    r.piece_id::text AS "pieceId", f.type AS "pieceType", f.nom AS "pieceNom"
                  FROM reclamations r JOIN users pu ON pu.id = r.parent_id
                  LEFT JOIN eleves e ON e.id = r.eleve_id LEFT JOIN fichiers f ON f.id = r.piece_id`,
+  clubs: `SELECT c.id::text AS id, c.nom, c.type, c.description, c.horaire, c.prix::float AS prix, c.places,
+            c.image_id::text AS "imageId", (SELECT count(*) FROM club_inscriptions i WHERE i.club_id = c.id)::int AS inscrits
+          FROM clubs c`,
+  clubInscriptions: `SELECT i.club_id::text AS "clubId", i.eleve_id::text AS "eleveId", u.nom AS "parentNom",
+                       u.telephone AS "parentTel", ${DATE_FR('i.created_at')} AS date
+                     FROM club_inscriptions i LEFT JOIN users u ON u.id = i.parent_id`,
   notesEleves: `SELECT n.id::text AS id, n.eleve_id::text AS "eleveId", e.nom AS "eleveNom", e.classe AS "eleveClasse",
                   n.type, n.sujet, n.message, n.piece_id::text AS "pieceId", f.type AS "pieceType", f.nom AS "pieceNom",
                   u.nom AS "creePar", ${DATE_FR('n.created_at')} AS date
@@ -173,6 +179,7 @@ async function nettoyerFichiers() {
     AND NOT EXISTS (SELECT 1 FROM eleves el WHERE el.photo_id = f.id)
     AND NOT EXISTS (SELECT 1 FROM reclamations r WHERE r.piece_id = f.id)
     AND NOT EXISTS (SELECT 1 FROM notes_eleves ne WHERE ne.piece_id = f.id)
+    AND NOT EXISTS (SELECT 1 FROM clubs cl WHERE cl.image_id = f.id)
     AND NOT EXISTS (SELECT 1 FROM cantine_semaines m WHERE m.photo_id = f.id)
     AND NOT EXISTS (SELECT 1 FROM emplois em WHERE em.photo_id = f.id)`);
 }
@@ -288,23 +295,25 @@ app.get('/api/data', auth, async (req, res) => {
   if (u.role === 'parent') {
     const enfants = await q(`${SQL.eleves} WHERE ${MES_ENFANTS} ORDER BY date_naissance NULLS LAST, nom`, [u.telCle]);
     const ids = enfants.map(e => Number(e.id)), cls = [...new Set(enfants.map(e => e.classe))];
-    const [emplois, absences, publications, reclamations, notesEleves, cantineReservations, cantineMenus, n, c, ev] = await Promise.all([
+    const [emplois, absences, publications, reclamations, notesEleves, clubs, clubInscriptions, cantineReservations, cantineMenus, n, c, ev] = await Promise.all([
       q(`${SQL.emplois} WHERE em.classe = ANY($1)`, [cls]),
       q(`${SQL.absences} WHERE a.eleve_id = ANY($1::int[]) ORDER BY a.date DESC LIMIT 500`, [ids]),
       q(`${SQL.publications} WHERE p.classe = ANY($1) ORDER BY p.date DESC, p.id DESC LIMIT 300`, [cls]),
       q(`${SQL.reclamations} WHERE r.parent_id = $1 ORDER BY r.created_at DESC`, [u.id]),
       q(`${SQL.notesEleves} WHERE n.eleve_id = ANY($1::int[]) ORDER BY n.created_at DESC LIMIT 200`, [ids]),
+      q(`${SQL.clubs} ORDER BY c.type, c.nom`),
+      q(`${SQL.clubInscriptions} WHERE i.eleve_id = ANY($1::int[])`, [ids]),
       q(`${SQL.cantineReservations} WHERE c.eleve_id = ANY($1::int[]) AND c.jour >= ${AUJOURDHUI} - 7 ORDER BY c.jour`, [ids]),
       q(`${SQL.cantineMenus}`),
       notifications, classes, evenements
     ]);
-    return res.json({ enfants, emplois, absences, publications, reclamations, notesEleves, cantineReservations, cantineMenus,
+    return res.json({ enfants, emplois, absences, publications, reclamations, notesEleves, clubs, clubInscriptions, cantineReservations, cantineMenus,
       notifications: n,
       classes: c.filter(x => cls.includes(x.nom)), evenements: ev, ...constantes });
   }
 
   // Administration : toute l'école
-  const [users, parents, eleves, emplois, absences, publications, reclamations, notesEleves,
+  const [users, parents, eleves, emplois, absences, publications, reclamations, notesEleves, clubs, clubInscriptions,
     cantineReservations, cantineMenus, n, c, ev] = await Promise.all([
     q(`${SQL.users} WHERE role <> 'parent' ORDER BY nom`),
     q(`${SQL.parents} ORDER BY u.nom`),
@@ -314,11 +323,13 @@ app.get('/api/data', auth, async (req, res) => {
     q(`${SQL.publications} ORDER BY p.date DESC, p.id DESC LIMIT 300`),
     q(`${SQL.reclamations} ORDER BY r.created_at DESC LIMIT 300`),
     q(`${SQL.notesEleves} ORDER BY n.created_at DESC LIMIT 300`),
+    q(`${SQL.clubs} ORDER BY c.type, c.nom`),
+    q(`${SQL.clubInscriptions} ORDER BY i.created_at`),
     q(`${SQL.cantineReservations} WHERE c.jour >= ${AUJOURDHUI} - 7 ORDER BY c.jour LIMIT 5000`),
     q(`${SQL.cantineMenus}`),
     notifications, classes, evenements
   ]);
-  res.json({ users, parents, eleves, emplois, absences, publications, reclamations, notesEleves,
+  res.json({ users, parents, eleves, emplois, absences, publications, reclamations, notesEleves, clubs, clubInscriptions,
     cantineReservations, cantineMenus, notifications: n, classes: c, evenements: ev, ...constantes });
 });
 
@@ -674,6 +685,86 @@ app.patch('/api/reclamations/:id/traiter', auth, equipe, async (req, res) => {
   await notifier(r.parent_id, 'reclamation', reponse
     ? `✉️ Réponse de l'administration à « ${r.sujet} » : ${reponse.slice(0, 120)}`
     : `✔ Votre message « ${r.sujet} » a été traité par l'administration.`);
+  res.json({ ok: true });
+});
+
+// ================= CLUBS =================
+// Clubs « inclus » : tous les enfants en profitent (rien à faire). Clubs « payants » : le parent y inscrit son enfant.
+function champsClub(b) {
+  const type = b.type === 'payant' ? 'payant' : 'inclus';
+  const prix = type === 'payant' && String(b.prix ?? '').trim() !== '' ? Number(String(b.prix).replace(',', '.')) : null;
+  exiger(prix === null || (Number.isFinite(prix) && prix >= 0 && prix < 100000), 'Prix invalide');
+  const places = String(b.places ?? '').trim() !== '' ? entier(b.places) : null;
+  exiger(places === null || places > 0, 'Nombre de places invalide');
+  return { nom: texte(b.nom, 'Nom du club').slice(0, 80), type, description: optionnel(b.description, 1000),
+    horaire: optionnel(b.horaire, 120), prix, places: type === 'payant' ? places : null };
+}
+const prixClub = p => (p === null || p === undefined ? '' : ` (${Number(p).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT / mois)`);
+
+app.post('/api/clubs', auth, equipe, televerser, async (req, res) => {
+  const c = champsClub(req.body);
+  const imageId = await enregistrerFichier(req.file, { imageSeulement: true });
+  await q(`INSERT INTO clubs (nom, type, description, horaire, prix, places, image_id, cree_par) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [c.nom, c.type, c.description, c.horaire, c.prix, c.places, imageId, req.user.id]);
+  await notifier('parent', 'club', c.type === 'payant'
+    ? `🎨 Nouveau club « ${c.nom} »${prixClub(c.prix)} : inscrivez votre enfant dans la page « Clubs ».`
+    : `🎨 Nouveau club inclus « ${c.nom} » : tous les enfants en profitent.`);
+  res.status(201).json({ ok: true });
+});
+
+// Modification (nouvelle image optionnelle) ; un club payant devenu « inclus » perd ses inscriptions
+app.put('/api/clubs/:id', auth, equipe, televerser, async (req, res) => {
+  const id = entier(req.params.id), c = champsClub(req.body);
+  const imageId = await enregistrerFichier(req.file, { imageSeulement: true });
+  const [r] = await q(`UPDATE clubs SET nom = $2, type = $3, description = $4, horaire = $5, prix = $6, places = $7,
+      image_id = coalesce($8, image_id) WHERE id = $1 RETURNING id`, [id, c.nom, c.type, c.description, c.horaire, c.prix, c.places, imageId]);
+  exiger(r, 'Club introuvable', 404);
+  if (c.type === 'inclus') await q('DELETE FROM club_inscriptions WHERE club_id = $1', [id]);
+  await nettoyerFichiers();
+  res.json({ ok: true });
+});
+
+app.delete('/api/clubs/:id', auth, equipe, async (req, res) => {
+  const id = entier(req.params.id);
+  const parents = (await q(`SELECT DISTINCT u.id FROM club_inscriptions i JOIN eleves e ON e.id = i.eleve_id
+    JOIN users u ON u.role = 'parent' AND u.tel_cle IN (tel_cle(e.tel_pere), tel_cle(e.tel_mere)) WHERE i.club_id = $1`, [id])).map(r => r.id);
+  const [c] = await q('DELETE FROM clubs WHERE id = $1 RETURNING nom', [id]);
+  exiger(c, 'Club introuvable', 404);
+  await nettoyerFichiers();
+  await notifier(parents, 'club', `🎨 Le club « ${c.nom} » est supprimé : l'inscription de votre enfant est annulée.`);
+  res.json({ ok: true });
+});
+
+// Inscription à un club payant par le parent (seulement son enfant ; refusée si le club est complet)
+app.post('/api/clubs/:id/inscriptions', auth, seul('parent'), async (req, res) => {
+  const id = entier(req.params.id);
+  const [enfant] = await q(`SELECT id, nom, classe FROM eleves WHERE id = $2 AND ${MES_ENFANTS}`, [req.user.telCle, entier(req.body.eleveId)]);
+  exiger(enfant, 'Enfant introuvable', 404);
+  const [club] = await q('SELECT nom, type, prix FROM clubs WHERE id = $1', [id]);
+  exiger(club, 'Club introuvable', 404);
+  exiger(club.type === 'payant', 'Ce club est inclus pour tous les enfants : pas besoin de les inscrire');
+  const [r] = await q(`INSERT INTO club_inscriptions (club_id, eleve_id, parent_id)
+    SELECT $1, $2, $3 FROM clubs c WHERE c.id = $1
+      AND (c.places IS NULL OR (SELECT count(*) FROM club_inscriptions i WHERE i.club_id = $1) < c.places)
+    ON CONFLICT DO NOTHING RETURNING club_id`, [id, enfant.id, req.user.id]);
+  if (!r) {
+    const [deja] = await q('SELECT 1 FROM club_inscriptions WHERE club_id = $1 AND eleve_id = $2', [id, enfant.id]);
+    exiger(deja, 'Ce club est complet');
+    return res.json({ ok: true });
+  }
+  await notifier('admin', 'club', `🎨 ${enfant.nom} (${enfant.classe}) est inscrit(e) au club « ${club.nom} »${prixClub(club.prix)} par ${req.user.nom}.`);
+  res.status(201).json({ ok: true });
+});
+
+// Désinscription : par le parent (son enfant) ou par l'administration
+app.delete('/api/clubs/:id/inscriptions/:eleveId', auth, async (req, res) => {
+  const id = entier(req.params.id), eleveId = entier(req.params.eleveId), parent = req.user.role === 'parent';
+  const [r] = await q(`DELETE FROM club_inscriptions i USING eleves e, clubs c WHERE i.club_id = $1 AND i.eleve_id = $2
+      AND e.id = i.eleve_id AND c.id = i.club_id ${parent ? 'AND (tel_cle(e.tel_pere) = $3 OR tel_cle(e.tel_mere) = $3)' : ''}
+    RETURNING e.nom AS eleve, e.classe, c.nom AS club`, parent ? [id, eleveId, req.user.telCle] : [id, eleveId]);
+  exiger(r, 'Inscription introuvable', 404);
+  if (parent) await notifier('admin', 'club', `🎨 ${req.user.nom} a désinscrit ${r.eleve} (${r.classe}) du club « ${r.club} ».`);
+  else await notifier(await parentsDesEleves([eleveId]), 'club', `🎨 ${r.eleve} n'est plus inscrit(e) au club « ${r.club} ».`);
   res.json({ ok: true });
 });
 

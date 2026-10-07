@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import bcrypt from 'bcryptjs';
 import { pool, q } from './db.js';
 
-const TABLES = `push_abonnements, notifications_lues, notifications, notes_eleves, reclamations, evenements,
+const TABLES = `push_abonnements, notifications_lues, notifications, notes_eleves, club_inscriptions, clubs, reclamations, evenements,
   cantine_reservations, cantine_semaines, cantine_menus, cantine_inscriptions,
   publication_fichiers, publications, absences, emplois, eleves, classes, users, fichiers,
   -- anciennes tables (WhatsApp, réunions de la direction, version école primaire)
