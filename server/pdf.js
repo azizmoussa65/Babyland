@@ -7,7 +7,7 @@ import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
-// Couleurs de La Marelle : violet + les cases colorées de la marelle du logo
+// Couleurs de l'application : violet + bande de couleurs
 const BLEU = '#7c3aed', NUIT = '#2a1659', GRIS = '#5f5873', TRAIT = '#e7e0f3', FOND = '#f8f5fd';
 const CASES = ['#e0362c', '#ffd23f', '#d93ccf', '#6fd13a', '#7fe0f0', '#9b4cf0'];
 const LOGO = fileURLToPath(new URL('./logo.png', import.meta.url));
@@ -26,7 +26,7 @@ const net = t => String(t ?? '').replace(/[  ]/g, ' ');
 const aujourdhui = () => net(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Tunis' }));
 
 function nouveauDocument(res, nomFichier, titre, layout = 'portrait') {
-  const doc = new PDFDocument({ size: 'A4', layout, margin: MARGE, bufferPages: true, info: { Title: titre, Author: 'La Marelle' } });
+  const doc = new PDFDocument({ size: 'A4', layout, margin: MARGE, bufferPages: true, info: { Title: titre, Author: 'Espace Baby Land' } });
   res.setHeader('Content-Type', 'application/pdf');
   doc.registerFont('Arabe', ARABE);
   doc.registerFont('Arabe-Gras', ARABE_GRAS);
@@ -50,9 +50,9 @@ function entete(doc, titre, sousTitre) {
     doc.image(LOGO, MARGE + 1, 10, { fit: [50, 50], align: 'center', valign: 'center' });
     x = MARGE + 64;
   }
-  doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(18).text('La ', x, 18, { continued: true })
-    .fillColor('#ffd23f').text('Marelle');
-  doc.font('Helvetica').fontSize(9).fillColor('#d9cff0').text('La Marelle · École préparatoire', x, 42);
+  doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(18).text('Baby ', x, 18, { continued: true })
+    .fillColor('#ffd23f').text('Land');
+  doc.font('Helvetica').fontSize(9).fillColor('#d9cff0').text('Espace Baby Land · Crèche & foyer de jour', x, 42);
   doc.fontSize(9).text(`Édité le ${aujourdhui()}`, MARGE, 42, { width: l - 2 * MARGE, align: 'right' });
   police(doc.fillColor(NUIT), titre, true).fontSize(16).text(titre, MARGE, 90, { wordSpacing: espaceMots(titre) });
   if (sousTitre) doc.font('Helvetica').fontSize(10).fillColor(GRIS).text(sousTitre, MARGE, doc.y + 2);
@@ -67,7 +67,7 @@ function piedDePage(doc) {
     const bas = doc.page.height - 28;
     doc.page.margins.bottom = 0;
     doc.fontSize(8).fillColor(GRIS).font('Helvetica')
-      .text(`La Marelle · page ${i + 1} / ${pages.count}`, MARGE, bas, { width: doc.page.width - 2 * MARGE, align: 'center' });
+      .text(`Espace Baby Land · page ${i + 1} / ${pages.count}`, MARGE, bas, { width: doc.page.width - 2 * MARGE, align: 'center' });
   }
 }
 

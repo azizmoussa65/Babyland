@@ -1,5 +1,5 @@
 /* =========================================================
-   Adresse du serveur API La Marelle
+   Adresse du serveur API Baby Land
    ---------------------------------------------------------
    - Dans le navigateur (PC, iPhone, Android) l'application est servie par le serveur
      lui-même : on laisse vide, l'API est à la même adresse.

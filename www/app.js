@@ -1,5 +1,5 @@
 /* =========================================================
-   La Marelle – Application de l'école préparatoire
+   Espace Baby Land – Application de la crèche & foyer de jour
    Espaces : Administration, Parents
    Les données sont stockées dans PostgreSQL, via l'API du serveur (dossier server/).
    Compatibilité : anciens iPhone (iOS 12, Safari 12) → pas de « ?? », « ?. », « ||= », globalThis… (ES2018 maximum).
@@ -223,35 +223,24 @@ document.addEventListener('gesturechange', e => e.preventDefault());
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
 // ================= ÉCRAN DE CONNEXION ANIMÉ =================
-// Derrière la carte montent doucement : les cases numérotées de la marelle (couleurs du logo), de petites marelles
-// dessinées à la craie, des lettres et chiffres à la craie, des palets et quelques fournitures scolaires
+// Derrière la carte montent doucement : des nuages, des bulles aux couleurs de « Baby Land » et des objets de la crèche
 (function animerConnexion() {
   const fond = $('fond-anime');
   if (!fond || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const hasard = (min, max) => min + Math.random() * (max - min);
-  // Petite marelle dessinée à la craie : ciel + cases 1 à 6
-  const marelle = `<svg viewBox="0 0 60 120" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true">
-    <path d="M8 22 A22 22 0 0 1 52 22 Z"/><rect x="8" y="22" width="22" height="20"/><rect x="30" y="22" width="22" height="20"/>
-    <rect x="19" y="42" width="22" height="20"/><rect x="8" y="62" width="22" height="20"/><rect x="30" y="62" width="22" height="20"/>
-    <rect x="19" y="82" width="22" height="20"/>
-    <g fill="currentColor" stroke="none" font-family="Baloo 2, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
-      <text x="19" y="36">5</text><text x="41" y="36">6</text><text x="30" y="56">4</text>
-      <text x="19" y="76">2</text><text x="41" y="76">3</text><text x="30" y="96">1</text></g></svg>`;
   const objets = [
-    ...Array.from({ length: 10 }, (_, i) => ({ classe: `case-num c${i % 6}`, contenu: i + 1, taille: [30, 52], tour: 40 })),
-    ...[0, 1, 2].map(() => ({ classe: 'mini-marelle', contenu: marelle, taille: [44, 70], tour: 50 })),
-    ...['A', 'B', 'C', 'a', 'b', '1', '2', '3', 'أ', 'ب', 'ت'].map(l => ({ classe: 'craie', contenu: l, taille: [26, 46], tour: 30 })),
-    ...[0, 1, 2].map(() => ({ classe: 'palet', contenu: '', taille: [16, 26] })),
-    ...['✏️', '📚', '🖍️', '🎒', '📐', '🧮'].map(o => ({ classe: 'fourniture', contenu: o, taille: [24, 36], tour: 200 }))
+    ...Array.from({ length: 7 }, () => ({ classe: 'nuage', taille: [50, 110], tour: 0 })),
+    ...Array.from({ length: 10 }, (_, i) => ({ classe: `bulle-bl c${i % 4}`, taille: [16, 46] })),
+    ...['🍼', '🧸', '🎈', '🍄', '⭐', '🦋', '🐣', '🧩', '✨', '🌈'].map(o => ({ classe: 'objet', contenu: o, taille: [24, 38], tour: 120 }))
   ].sort(() => Math.random() - 0.5);
   fond.innerHTML = objets.map((o, i) => {
     const t = hasard(...o.taille).toFixed(0);
-    return `<span class="${o.classe}" style="left:${(i * 100 / objets.length + hasard(0, 3)).toFixed(1)}%;--t:${t}px;--tour:${o.tour || 360}deg;`
-      + `--duree:${hasard(13, 24).toFixed(1)}s;--delai:-${hasard(0, 24).toFixed(1)}s;--derive:${hasard(-50, 50).toFixed(0)}px">${o.contenu}</span>`;
+    return `<span class="${o.classe}" style="left:${(i * 100 / objets.length + hasard(-2, 3)).toFixed(1)}%;--t:${t}px;--tour:${o.tour ?? 360}deg;`
+      + `--duree:${hasard(14, 26).toFixed(1)}s;--delai:-${hasard(0, 26).toFixed(1)}s;--derive:${hasard(-50, 50).toFixed(0)}px">${o.contenu || ''}</span>`;
   }).join('');
   // Phrases d'accueil qui changent toutes les 3 secondes
-  const phrases = ['Bienvenue à La Marelle Kids 👋', 'Apprendre en s\'amusant 🎨', 'Suivez la journée de vos enfants 🧸',
-    'Chaque jour, un peu plus grand 🌱', 'Ensemble vers la réussite 🏆'];
+  const phrases = ['Bienvenue à l\'Espace Baby Land 👋', 'Crèche & foyer de jour 🍄', 'Suivez la journée de vos enfants 🧸',
+    'Jouer, rire et grandir ensemble 🌱', 'Chaque jour, un peu plus grand ☁️'];
   let n = 0;
   setInterval(() => {
     const s = $('slogan');
@@ -261,125 +250,115 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preven
   }, 3000);
 })();
 
-// ================= LOGO ANIMÉ : LA MARELLE =================
-// Les 6 cases du logo tombent à l'ouverture, un palet saute de case en case (1 → 6) toutes les 7 secondes,
-// une case touchée saute en jouant sa note (do ré mi sol la do) avec des confettis de sa couleur,
-// et les cases sautent quand on écrit dans le formulaire (elles tremblent si le mot de passe est faux)
-const MARELLE = {
-  couleurs: ['#e0362c', '#ffd23f', '#d93ccf', '#6fd13a', '#7fe0f0', '#9b4cf0'],
-  notes: [523.25, 587.33, 659.25, 783.99, 880, 1046.5],
-  calme: matchMedia('(prefers-reduced-motion: reduce)').matches,
-  audio: null
-};
-const casesMarelle = () => [...document.querySelectorAll('#logo-marelle .lm-case')];
+// ================= LOGO ANIMÉ : LES SCHTROUMPFS DE BABY LAND =================
+// Le logo est en couches (scripts/babyland-logo.mjs) : schtroumpfs derrière le nuage, nuage, bras du garçon devant, badge.
+// La fille joue à cache-cache derrière le nuage, le garçon se dandine (son bras posé sur le nuage bouge avec lui),
+// le badge « Crèche & foyer de jour » se balance. Un appui sur un schtroumpf : il réagit avec une bulle et un son ;
+// sur le badge : il fait un tour. Les schtroumpfs réagissent aussi quand on écrit, et tremblent si la connexion échoue.
+const ANIM = { calme: matchMedia('(prefers-reduced-motion: reduce)').matches, audio: null };
+const coucheLogo = nom => document.querySelector(`#logo-baby .bl-${nom}`);
+const couchesGarcon = () => [coucheLogo('garcon'), coucheLogo('garcon-devant')].filter(Boolean);
 const loginVisible = () => !$('login-page').classList.contains('hidden') && !document.hidden;
+// Épaule du garçon, posée sur le nuage (en fraction du logo) : ses deux couches tournent autour de ce point
+const PIVOT_GARCON = [0.45, 0.47];
 
-function noteMarelle(i) {
+// Petite mélodie (fréquences jouées l'une après l'autre)
+function sonLogo(notes) {
   try {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) return;
-    const a = MARELLE.audio = MARELLE.audio || new Audio();
+    const a = ANIM.audio = ANIM.audio || new Audio();
     if (a.state === 'suspended') a.resume();
-    const t = a.currentTime, o = a.createOscillator(), g = a.createGain();
-    o.type = 'triangle';
-    o.frequency.value = MARELLE.notes[i];
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-    o.connect(g).connect(a.destination);
-    o.start(t);
-    o.stop(t + 0.55);
+    notes.forEach((f, i) => {
+      const t = a.currentTime + i * 0.13, o = a.createOscillator(), g = a.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g).connect(a.destination);
+      o.start(t);
+      o.stop(t + 0.4);
+    });
   } catch { /* pas de son : tant pis */ }
 }
-
-// fort = case touchée (grand saut avec un tour) ; sinon petit saut
-function sauterCase(i, fort = false) {
-  const c = casesMarelle()[i];
-  if (!c || MARELLE.calme) return;
-  c.animate(fort
-    ? [{ transform: 'none' }, { transform: 'translateY(-60%) rotate(180deg) scale(1.15)', offset: 0.45 },
-      { transform: 'translateY(0) rotate(360deg) scale(1.15, 0.8)', offset: 0.8 }, { transform: 'none' }]
-    : [{ transform: 'none' }, { transform: 'translateY(-22%) scale(1.06)', offset: 0.35 },
-      { transform: 'scale(1.12, 0.86)', offset: 0.7 }, { transform: 'none' }],
-  { duration: fort ? 700 : 420, easing: 'ease-out' });
+// Bulle de dialogue au-dessus d'un schtroumpf (position en % du logo)
+function bulleLogo(texte, x, y) {
+  const b = $('bl-bulle');
+  if (!b) return;
+  b.textContent = texte;
+  b.style.left = x + '%';
+  b.style.top = y + '%';
+  b.classList.remove('visible');
+  void b.offsetWidth;   // relance l'animation d'apparition
+  b.classList.add('visible');
+  clearTimeout(b._minuterie);
+  b._minuterie = setTimeout(() => b.classList.remove('visible'), 1600);
 }
-// Case qui s'écrase un peu quand le palet tombe dessus
-function poserSurCase(i) {
-  casesMarelle()[i]?.animate([{ transform: 'none' }, { transform: 'scale(1.14, 0.82)', offset: 0.3 },
-    { transform: 'translateY(-6%)', offset: 0.65 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
-}
-function confettisCase(i) {
-  const logo = $('logo-marelle'), c = casesMarelle()[i];
-  if (!logo || !c || MARELLE.calme) return;
-  const x = c.offsetLeft + c.offsetWidth / 2, y = c.offsetTop + c.offsetHeight / 2;
-  for (let k = 0; k < 16; k++) {
-    const p = document.createElement('span');
-    p.className = 'lm-confetti';
-    p.style.cssText = `left:${x}px;top:${y}px;background:${k % 3 ? MARELLE.couleurs[i] : MARELLE.couleurs[(i + k) % 6]}`;
-    logo.appendChild(p);
-    const angle = Math.random() * Math.PI * 2, d = 30 + Math.random() * 45;
-    p.animate([{ transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-      { transform: `translate(${Math.cos(angle) * d}px, ${Math.sin(angle) * d - 20}px) rotate(${Math.random() * 540}deg) scale(0.4)`, opacity: 0 }],
-    { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(.2, .7, .4, 1)' }).onfinish = () => p.remove();
-  }
-}
-// Toutes les cases l'une après l'autre (en jouant la gamme si avecSon)
-function vagueMarelle(avecSon = false) {
-  casesMarelle().forEach((c, i) => setTimeout(() => { sauterCase(i); if (avecSon) noteMarelle(i); }, i * 90));
-}
-function secouerMarelle() {
-  if (MARELLE.calme) return;
-  casesMarelle().forEach((c, i) => c.animate([{ transform: 'none' }, { transform: 'translateX(-12%) rotate(-8deg)' },
-    { transform: 'translateX(12%) rotate(8deg)' }, { transform: 'translateX(-8%) rotate(-4deg)' }, { transform: 'none' }],
-  { duration: 450, delay: i * 30, easing: 'ease-in-out' }));
-}
-
-// Le palet fait la marelle : il arrive de la gauche, saute sur les cases 1 à 6, puis repart à droite
-let paletEnCours = false;
-async function tourDuPalet() {
-  const palet = $('lm-palet'), cases = casesMarelle();
-  if (paletEnCours || !palet || !cases.length || MARELLE.calme || !loginVisible()) return;
-  paletEnCours = true;
-  const t = palet.offsetWidth;
-  const sur = c => ({ x: c.offsetLeft + c.offsetWidth / 2 - t / 2, y: c.offsetTop + c.offsetHeight * 0.42 - t / 2 });
-  const points = cases.map(sur);
-  const depart = { x: points[0].x - cases[0].offsetWidth * 1.3, y: points[0].y + cases[0].offsetHeight * 0.5 };
-  const fin = { x: points[5].x + cases[5].offsetWidth * 1.1, y: points[5].y + cases[5].offsetHeight * 0.6 };
-  // Saut en arc (parabole) d'un point à l'autre
-  const saut = (a, b, opaciteA, opaciteB) => palet.animate(Array.from({ length: 9 }, (_, k) => {
-    const s = k / 8, h = Math.max(28, Math.abs(b.x - a.x) * 0.9);
-    return { transform: `translate(${a.x + (b.x - a.x) * s}px, ${a.y + (b.y - a.y) * s - 4 * h * s * (1 - s)}px)`,
-      opacity: opaciteA + (opaciteB - opaciteA) * s };
-  }), { duration: 360, easing: 'linear', fill: 'forwards' }).finished;
-  try {
-    let ici = depart;
-    for (const [i, p] of points.entries()) {
-      await saut(ici, p, i ? 1 : 0, 1);
-      poserSurCase(i);
-      ici = p;
-      await new Promise(r => setTimeout(r, 120));
-    }
-    await saut(ici, fin, 1, 0);
-  } catch { /* animation annulée */ }
-  paletEnCours = false;
-}
-
-(function animerMarelle() {
-  const logo = $('logo-marelle');
+function placerPivots() {
+  const logo = $('logo-baby');
   if (!logo) return;
-  casesMarelle().forEach((c, i) => c.addEventListener('pointerdown', e => {
+  const L = logo.offsetWidth, H = logo.offsetHeight;
+  couchesGarcon().forEach(c => { c.style.transformOrigin = `${PIVOT_GARCON[0] * L - c.offsetLeft}px ${PIVOT_GARCON[1] * H - c.offsetTop}px`; });
+}
+
+// La fille se cache derrière le nuage (seul son bonnet dépasse), puis ressort
+function coucouFille(fort = false) {
+  const f = coucheLogo('fille');
+  if (!f || ANIM.calme) return;
+  f.animate([{ transform: 'none' }, { transform: `translateY(${fort ? 58 : 50}%)`, offset: 0.35 },
+    { transform: `translateY(${fort ? 58 : 50}%)`, offset: 0.6 }, { transform: 'translateY(-2%) rotate(-3deg)', offset: 0.82 }, { transform: 'none' }],
+  { duration: fort ? 1500 : 1300, easing: 'ease-in-out' });
+}
+// Le garçon se dandine : ses deux couches (derrière et devant le nuage) bougent ensemble
+function dandinerGarcon(fort = false) {
+  if (ANIM.calme) return;
+  const a = fort ? 7 : 4;
+  couchesGarcon().forEach(c => c.animate([{ transform: 'none' }, { transform: `rotate(${-a}deg)` }, { transform: `rotate(${a}deg)` },
+    { transform: `rotate(${-a / 2}deg)` }, { transform: 'none' }], { duration: fort ? 1000 : 800, easing: 'ease-in-out' }));
+}
+function tourBadge() {
+  const b = coucheLogo('badge');
+  if (!b || ANIM.calme) return;
+  b.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 900, easing: 'cubic-bezier(.3, 1.3, .6, 1)' });
+}
+// Petite réaction (pendant la saisie) : la fille plonge un peu, ou le garçon bouge
+function reactionLogo(i) {
+  if (ANIM.calme) return;
+  if (i % 2) return dandinerGarcon();
+  coucheLogo('fille')?.animate([{ transform: 'none' }, { transform: 'translateY(10%)' }, { transform: 'none' }], { duration: 350, easing: 'ease-out' });
+}
+function vagueLogo() { coucouFille(); setTimeout(dandinerGarcon, 250); }
+function secouerLogo() {
+  if (ANIM.calme) return;
+  const secousse = [{ transform: 'none' }, { transform: 'translateX(-4%) rotate(-3deg)' }, { transform: 'translateX(4%) rotate(3deg)' },
+    { transform: 'translateX(-2%)' }, { transform: 'none' }];
+  [coucheLogo('fille'), ...couchesGarcon()].filter(Boolean).forEach(c => c.animate(secousse, { duration: 450, easing: 'ease-in-out' }));
+}
+
+(function animerLogo() {
+  const logo = $('logo-baby');
+  if (!logo) return;
+  placerPivots();
+  addEventListener('resize', placerPivots);
+  logo.querySelectorAll('img').forEach(i => i.addEventListener('load', placerPivots));
+  // Les couches se superposent (le nuage couvre tout le logo) : on regarde où l'on a touché
+  logo.addEventListener('pointerdown', e => {
     e.preventDefault();
-    noteMarelle(i);
-    sauterCase(i, true);
-    confettisCase(i);
-  }));
-  logo.querySelector('.lm-texte').addEventListener('pointerdown', e => { e.preventDefault(); vagueMarelle(true); });
-  // Chaque lettre écrite fait sauter la case suivante
+    const r = logo.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    const st = getComputedStyle(logo), v = n => parseFloat(st.getPropertyValue(n));   // badge : babyland-logo.css
+    const dansBadge = Math.hypot((x - v('--badge-x')) * r.width, (y - v('--badge-y')) * r.height) < v('--badge-r') * r.width;
+    if (dansBadge) { tourBadge(); sonLogo([523, 587, 659, 784, 1047]); }
+    else if (x < 0.31 && y < 0.58) { coucouFille(true); bulleLogo('Coucou ! 👋', 17, 14); sonLogo([784, 659, 784, 659]); }
+    else if (x < 0.62 && y < 0.62) { dandinerGarcon(true); bulleLogo('Bienvenue ! 😊', 44, 12); sonLogo([523, 659, 784]); }
+    else vagueLogo();
+  });
+  // Chaque lettre écrite fait réagir un schtroumpf, à tour de rôle
   let lettres = 0;
-  ['login-id', 'login-password'].forEach(id => $(id)?.addEventListener('input', () => sauterCase(lettres++ % 6)));
-  // Premier tour du palet après la chute des cases, puis toutes les 7 secondes
-  setTimeout(tourDuPalet, 1800);
-  setInterval(tourDuPalet, 7000);
+  ['login-id', 'login-password'].forEach(id => $(id)?.addEventListener('input', () => reactionLogo(lettres++)));
+  // Toutes les 4 secondes : cache-cache de la fille, puis le garçon se dandine
+  let tour = 0;
+  setInterval(() => { if (loginVisible()) (tour++ % 2 ? dandinerGarcon : coucouFille)(); }, 4000);
 })();
 
 // ================= CONNEXION =================
@@ -393,7 +372,7 @@ async function login(e) {
   // Après 4 s sans réponse : le serveur gratuit est sans doute en train de se réveiller
   const lent = setTimeout(() => { bouton.textContent = '⏳ Réveil du serveur (jusqu\'à 1 min)…'; }, 4000);
   $('login-error').textContent = '';
-  vagueMarelle();
+  vagueLogo();
   try {
     const r = await api('/login', { method: 'POST', body: { identifiant: val('login-id'), password: $('login-password').value } });
     token = r.token;
@@ -401,7 +380,7 @@ async function login(e) {
     await ouvrirSession(r.user);
   } catch (err) {
     $('login-error').textContent = err.message;
-    secouerMarelle();
+    secouerLogo();
   } finally {
     clearTimeout(lent);
     bouton.disabled = false;
@@ -608,7 +587,7 @@ const etapeInstall = (n, texte, dessin = '') => `<li class="gi-etape"><span clas
 const barreInstall = (bouton, centre = false) => `<div class="gi-barre ${centre ? 'gi-centre' : ''}" aria-hidden="true">
   ${centre ? '<i></i><i></i>' : '<i></i>'}<span class="gi-bouton">${bouton}</span>${centre ? '<i></i><i></i>' : ''}</div>`;
 const choixInstall = (texte, icone) => `<div class="gi-choix" aria-hidden="true"><strong>${texte}</strong><span>${icone}</span></div>`;
-const ICONE_APPLI = `<div class="gi-appli" aria-hidden="true"><img src="icons/icon-192.png" alt=""><strong>La Marelle</strong></div>`;
+const ICONE_APPLI = `<div class="gi-appli" aria-hidden="true"><img src="icons/icon-192.png" alt=""><strong>Baby Land</strong></div>`;
 
 function etapesInstall() {
   if (ongletInstall === 'iphone') return `<ol class="gi-etapes">
@@ -617,7 +596,7 @@ function etapesInstall() {
       + (versionIOS && !iosAvant(26, 0) ?' <span class="gi-ou">(iOS 26 : bouton <b>⋯</b> puis « Partager »)</span>' : ''), barreInstall(ICONE_PARTAGE, true))}
     ${etapeInstall(3, 'Faites défiler et choisissez', choixInstall('Sur l\'écran d\'accueil', '⊞'))}
     ${etapeInstall(4, 'Touchez <b>« Ajouter »</b> en haut à droite', barreInstall('Ajouter'))}
-    ${etapeInstall(5, 'Ouvrez La Marelle depuis la nouvelle icône, puis activez les notifications', ICONE_APPLI)}
+    ${etapeInstall(5, 'Ouvrez Baby Land depuis la nouvelle icône, puis activez les notifications', ICONE_APPLI)}
     </ol>
     <p class="gi-note">${iosAvant(16, 4)
       ? `Votre iPhone (iOS ${versionIOS.join('.')}) installe l'application, mais n'affiche pas les notifications dans la barre du téléphone
@@ -630,7 +609,7 @@ function etapesInstall() {
     ${etapeInstall(2, 'Touchez le menu en haut à droite', barreInstall('⋮'))}
     ${etapeInstall(3, 'Choisissez', choixInstall('Installer l\'application', '⤓') + '<p class="gi-ou">ou « Ajouter à l\'écran d\'accueil »</p>')}
     ${etapeInstall(4, 'Confirmez avec <b>« Installer »</b>', barreInstall('Installer'))}
-    ${etapeInstall(5, 'Ouvrez La Marelle depuis la nouvelle icône, puis activez les notifications', ICONE_APPLI)}
+    ${etapeInstall(5, 'Ouvrez Baby Land depuis la nouvelle icône, puis activez les notifications', ICONE_APPLI)}
     </ol>`;
 }
 function dessinerGuideInstall() {
@@ -640,7 +619,7 @@ function dessinerGuideInstall() {
   $('guide-install').querySelector('.gi-feuille').innerHTML = `
     <div class="gi-poignee"></div>
     <div class="gi-tete">
-      <div><h2 id="gi-titre">L'appli La Marelle Kids sur votre téléphone</h2>
+      <div><h2 id="gi-titre">L'appli Baby Land sur votre téléphone</h2>
         <p class="gi-sous">Gratuite, sans App Store ni Play Store. 20 secondes.</p></div>
       <button type="button" class="gi-fermer" onclick="fermerGuideInstall()" aria-label="Fermer">✕</button>
     </div>
@@ -805,7 +784,7 @@ function testerPush() { action(api('/push/test', { method: 'POST' }), 'Notificat
 document.addEventListener('DOMContentLoaded', () => {
   const P = pluginPush();
   if (estNatif && window.PUSH_NATIF && P) {
-    P.createChannel({ id: 'lamarelle', name: 'La Marelle', importance: 5, visibility: 1 }).catch(() => {});
+    P.createChannel({ id: 'lamarelle', name: 'Baby Land', importance: 5, visibility: 1 }).catch(() => {});
     P.addListener('registration', ({ value }) => {
       pushCle = value;
       if (token) api('/push/abonnement', { method: 'POST', body: { type: 'fcm', jeton: value } })
@@ -832,10 +811,10 @@ function htmlCartePush() {
     default: `<p class="muted" style="margin-bottom:12px">Recevez les absences, les cours du jour, le travail à la maison, les événements…
       dans la barre de notifications du téléphone, même application fermée.</p>
       <button class="btn btn-primary btn-sm" onclick="activerPush()">🔔 Activer les notifications</button>`,
-    denied: `<p>🚫 Notifications bloquées pour La Marelle. Autorisez-les dans les réglages
-      (navigateur : icône 🔒 à côté de l'adresse → Notifications → Autoriser ; iPhone : Réglages → Notifications → La Marelle), puis rouvrez l'application.</p>`,
+    denied: `<p>🚫 Notifications bloquées pour Baby Land. Autorisez-les dans les réglages
+      (navigateur : icône 🔒 à côté de l'adresse → Notifications → Autoriser ; iPhone : Réglages → Notifications → Baby Land), puis rouvrez l'application.</p>`,
     'ios-installer': `<p>Sur iPhone, les notifications marchent quand l'application est sur l'écran d'accueil (iOS 16.4 ou plus récent) :
-      Safari → <b>Partager</b> <span class="ios-share">⬆︎</span> → <b>« Sur l'écran d'accueil »</b>, ouvrez La Marelle depuis l'écran d'accueil,
+      Safari → <b>Partager</b> <span class="ios-share">⬆︎</span> → <b>« Sur l'écran d'accueil »</b>, ouvrez Baby Land depuis l'écran d'accueil,
       puis revenez ici pour les activer.</p>`,
     'apk-web': `<p class="muted">Dans cette application, les notifications s'affichent avec la cloche 🔔 en haut.
       Pour les recevoir aussi dans la barre du téléphone : ouvrez <b>${esc(API_MOBILE)}</b> dans Chrome → menu ⋮ → <b>« Installer l'application »</b>,
@@ -1100,7 +1079,7 @@ function carteEditionEleve() {
 
 // ---- Comptes parents créés automatiquement : identifiants à transmettre (une seule fois) ----
 function messageIdentifiants(p) {
-  return `Bonjour, voici votre accès à l'Espace Parents de l'école (application La Marelle Kids) :\n`
+  return `Bonjour, voici votre accès à l'Espace Parents de l'école (application Espace Baby Land) :\n`
     + `Numéro : ${p.telephone}\nMot de passe : ${p.password} (votre numéro)\n`
     + `Vous pouvez changer le mot de passe dans « Mon profil ».\n${API_MOBILE}`;
 }
@@ -1494,7 +1473,7 @@ function majComptesARebours() {
       const premier = b.textContent === '–';
       b.textContent = texte;
       // La case dont le chiffre change fait un petit saut (comme les cases de la marelle)
-      if (!premier && !MARELLE.calme) b.parentNode.animate([{ transform: 'translateY(-4px) scale(1.08)' }, { transform: 'none' }],
+      if (!premier && !ANIM.calme) b.parentNode.animate([{ transform: 'translateY(-4px) scale(1.08)' }, { transform: 'none' }],
         { duration: 260, easing: 'ease-out' });
     });
   });

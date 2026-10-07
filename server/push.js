@@ -14,7 +14,7 @@ let fcm = null;   // firebase-admin messaging, ou null si Firebase n'est pas con
 export async function initialiserPush() {
   let cles = await parametre('vapid', null);
   if (!cles) { cles = webpush.generateVAPIDKeys(); await definirParametre('vapid', cles); }
-  webpush.setVapidDetails(process.env.PUSH_CONTACT || 'mailto:contact@lamarelle.tn', cles.publicKey, cles.privateKey);
+  webpush.setVapidDetails(process.env.PUSH_CONTACT || 'mailto:contact@babyland.tn', cles.publicKey, cles.privateKey);
   clePublique = cles.publicKey;
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
@@ -49,7 +49,7 @@ export async function pousser(pour, type, texte) {
   const abonnements = await q(`SELECT a.id, a.type, a.cle, a.donnees FROM push_abonnements a JOIN users u ON u.id = a.user_id
     WHERE u.id::text = ANY($1) OR u.role = ANY($1)`, [liste]);
   if (!abonnements.length) return;
-  const titre = 'La Marelle' + (TITRES[type] ? ' · ' + TITRES[type] : '');
+  const titre = 'Baby Land' + (TITRES[type] ? ' · ' + TITRES[type] : '');
   const perimes = [];
   const web = abonnements.filter(a => a.type === 'web');
   await Promise.all(web.map(a => webpush.sendNotification(a.donnees, JSON.stringify({ titre, texte, type }), { TTL: 3 * 24 * 3600 })

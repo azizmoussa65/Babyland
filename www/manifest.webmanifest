@@ -1,6 +1,6 @@
 {
-  "name": "La Marelle",
-  "short_name": "La Marelle",
+  "name": "Espace Baby Land",
+  "short_name": "Baby Land",
   "description": "Plateforme de gestion de l'école privée : direction, administration, professeurs, étudiants et parents.",
   "lang": "fr",
   "start_url": "./index.html",

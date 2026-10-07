@@ -1,4 +1,4 @@
--- ================= SCHÉMA POSTGRESQL – La Marelle (école préparatoire) =================
+-- ================= SCHÉMA POSTGRESQL – Espace Baby Land (crèche & foyer de jour) =================
 -- Deux espaces : Administration, Parents.
 -- Les élèves (petits) n'ont pas de compte : leurs parents se connectent avec leur numéro de téléphone.
 

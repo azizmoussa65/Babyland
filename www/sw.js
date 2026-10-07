@@ -1,8 +1,8 @@
 /* Service worker : l'application fonctionne hors-ligne une fois ouverte une première fois */
-const CACHE = 'lamarelle-v4';
+const CACHE = 'babyland-v1';
 const FICHIERS = [
   './', './index.html', './style.css', './config.js', './app.js', './manifest.webmanifest', './img/logo.png',
-  './marelle-cases.css', './img/marelle-texte.png', './fonts/nunito.woff2', './fonts/baloo2.woff2', ...[0, 1, 2, 3, 4, 5].map(i => `./img/case-${i}.png`),
+  './babyland-logo.css', './fonts/nunito.woff2', './fonts/baloo2.woff2', ...['nuage', 'fille', 'garcon', 'garcon-devant', 'badge'].map(n => `./img/baby-${n}.png`),
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'
 ];
 
@@ -32,7 +32,7 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { texte: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.titre || 'La Marelle', {
+  e.waitUntil(self.registration.showNotification(d.titre || 'Baby Land', {
     body: d.texte || 'Nouvelle notification',
     icon: 'icons/icon-192.png',
     badge: 'icons/badge-96.png',

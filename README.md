@@ -1,4 +1,4 @@
-# La Marelle – École préparatoire · Android, iOS + PostgreSQL
+# Baby Land – École préparatoire · Android, iOS + PostgreSQL
 
 Application de l'école préparatoire : **Administration** et **Espace Parents**.
 
@@ -40,7 +40,7 @@ npm run dev        # lance PostgreSQL (Docker) puis l'API sur http://localhost:3
 ### Autoriser les téléphones à se connecter (une seule fois)
 Dans **PowerShell en administrateur** :
 ```powershell
-New-NetFirewallRule -DisplayName "La Marelle API (port 3003)" -Direction Inbound -Protocol TCP -LocalPort 3003 -Action Allow
+New-NetFirewallRule -DisplayName "Baby Land API (port 3003)" -Direction Inbound -Protocol TCP -LocalPort 3003 -Action Allow
 ```
 
 ---

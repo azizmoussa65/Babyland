@@ -1,4 +1,4 @@
-# Construit l'APK Android de La Marelle -> Babyland.apk
+# Construit l'APK Android de Baby Land -> Babyland.apk
 # Le chemin du dossier contient des accents (é, è) que les outils Android refusent :
 # on passe donc par une jonction C:\babyland qui pointe vers ce dossier.
 $ErrorActionPreference = 'Stop'
