@@ -1,0 +1,29 @@
+{
+  "appId": "tn.ecole.babyland",
+  "appName": "La Marelle",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#2a1659",
+    "allowMixedContent": true,
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#fff7e8",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#2a1659",
+      "overlaysWebView": false
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
+  }
+}

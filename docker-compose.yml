@@ -1,0 +1,22 @@
+# Base de données PostgreSQL de Babyland
+#   Mot de passe : fichier .env à la racine (POSTGRES_PASSWORD=..., non versionné)
+#   Démarrer : docker compose up -d
+#   Arrêter  : docker compose down        (les données sont conservées dans le volume)
+# Port 5436 sur le PC (5432 à 5435 sont déjà utilisés par d'autres projets, dont La Marelle sur 5435)
+name: babyland
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: babyland-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: babyland
+      POSTGRES_USER: babyland
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD dans le fichier .env}
+    ports:
+      - "5436:5432"
+    volumes:
+      - babyland-data:/var/lib/postgresql/data
+
+volumes:
+  babyland-data:
