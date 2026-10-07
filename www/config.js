@@ -8,7 +8,7 @@
        • en production     : https://votre-serveur.onrender.com
    Après modification : npm run apk (Android) / npm run open:ios (iOS)
    ========================================================= */
-const API_MOBILE = '';   // À REMPLIR : adresse Render de Babyland (https://….onrender.com) ; tests en local : 'http://172.20.10.2:3003'
+const API_MOBILE = 'https://babyland.onrender.com';   // tests en local : 'http://172.20.10.2:3003'
 
 window.API_URL = window.Capacitor && window.Capacitor.isNativePlatform() ? API_MOBILE : '';
 
