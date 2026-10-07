@@ -1,0 +1,130 @@
+/* =========================================================
+   Thème « Espace Baby Land » : ciel et nuages
+   Chargé après style.css : il ne change que l'apparence des pages de l'application
+   (menu clair, bulles rondes, bandeau en ciel pastel avec nuages, boutons en pilule, police Fredoka).
+   Contrastes vérifiés : textes ≥ 4,5:1 (grands chiffres ≥ 3:1).
+   ========================================================= */
+@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/fredoka.woff2) format('woff2'); }
+
+:root {
+  --titre: 'Fredoka', 'Nunito', "Segoe UI", Roboto, Arial, sans-serif;
+  --bg: #eef7fd;              /* ciel très clair */
+  --card: #fffefb;
+  --champ: #f7fbff;
+  --doux: #e6f3fb;            /* bleu ciel clair : boutons clairs, en-têtes de tableaux */
+  --border: #d6e8f4;
+  --radius: 24px;
+  --shadow: 0 2px 4px rgba(10, 105, 171, 0.05), 0 10px 28px rgba(10, 105, 171, 0.08);
+  --menu: #fffefb;            /* menu latéral clair */
+  --menu-survol: #eaf5fc;
+}
+
+/* Fond : ciel bleu pâle vers rose pâle, avec de grands nuages très légers */
+body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='360' viewBox='0 0 520 360'%3E%3Cg fill='%23ffffff' opacity='0.55'%3E%3Cpath d='M60 110h120a26 26 0 0 0 0-52a40 40 0 0 0-74-12a28 28 0 0 0-46 22a21 21 0 0 0 0 42z'/%3E%3Cpath d='M330 290h130a28 28 0 0 0 0-56a44 44 0 0 0-82-12a30 30 0 0 0-48 26a21 21 0 0 0 0 42z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 520px 360px,
+    linear-gradient(180deg, #e8f5fd 0%, #f6f1fb 55%, #fdf0f6 100%) fixed;
+  background-color: var(--bg);
+}
+
+/* ---------- Menu latéral clair ---------- */
+.sidebar { background: var(--menu); color: var(--text); border-right: 1px solid var(--border); box-shadow: 4px 0 24px rgba(10, 105, 171, 0.06); }
+.sidebar::before { display: none; }
+.brand { color: #c80067; }                   /* « Baby » rose, « Land » bleu, comme le logo */
+.brand span { color: var(--primary); }
+.brand img { border: 0; background: var(--carte-connexion); box-shadow: 0 3px 10px rgba(10, 105, 171, 0.15); border-radius: 16px; }
+.role-badge { background: var(--primary-light); border: 0; color: var(--primary); }
+.menu { gap: 2px; }
+.menu a { color: var(--text); border-radius: 999px; padding: 5px 12px 5px 6px; }
+.menu a > span:first-child, .menu a:nth-child(even) > span:first-child {
+  border-radius: 50%; transform: none; box-shadow: none;
+  background: var(--primary-light);
+  background: color-mix(in srgb, var(--case, var(--case-vert)) 28%, #ffffff);
+}
+.menu a:hover { background: var(--menu-survol); color: var(--text); }
+.menu a:hover > span:first-child { transform: scale(1.1); }
+.menu a.active { background: var(--accent); color: var(--ivoire); box-shadow: 0 6px 14px rgba(200, 0, 103, 0.25); }
+.menu a.active > span:first-child { background: var(--ivoire); }
+.btn-logout { background: var(--accent-light); color: var(--accent); border: 0; border-radius: 999px; }
+.btn-logout:hover { background: var(--accent); color: var(--ivoire); }
+/* Prochain événement dans le menu (fond clair) */
+.sb-evenement { background: var(--primary-light); border: 0; color: var(--text); border-radius: 20px; }
+.sb-evenement:hover { background: #d6ecf9; }
+.sb-ev-titre { color: var(--accent); }
+.sb-evenement .cr-fini { color: var(--accent); }
+
+/* ---------- Barre du haut ---------- */
+.topbar { background: rgba(255, 254, 251, 0.85); border-bottom: 0; box-shadow: 0 6px 20px rgba(10, 105, 171, 0.06); }
+.topbar h2 { color: var(--primary); font-weight: 600; }
+.bell { background: var(--primary-light); }
+.overlay { background: rgba(13, 59, 94, 0.35); }
+
+/* ---------- Cartes et bandeau ---------- */
+.card, .stat { border: 0; }
+.card h3 { font-weight: 600; color: var(--sidebar); }
+/* Bandeau d'accueil : ciel pastel avec des nuages blancs */
+.welcome {
+  background: linear-gradient(120deg, #cfeafb 0%, #e3e4fb 50%, #ffd9ea 100%);
+  color: var(--sidebar); border-radius: 28px; box-shadow: 0 10px 30px rgba(10, 105, 171, 0.12);
+}
+.welcome h3 { font-weight: 600; color: var(--sidebar); }
+.welcome p { opacity: 1; color: #33475b; }
+.welcome::after {
+  width: 170px; height: 80px; right: 26px; top: calc(50% - 40px); border-radius: 0; transform: none; box-shadow: none;
+  background:
+    radial-gradient(circle at 26% 66%, #ffffff 0 22%, transparent 23%),
+    radial-gradient(circle at 48% 44%, #ffffff 0 30%, transparent 31%),
+    radial-gradient(circle at 72% 62%, #ffffff 0 24%, transparent 25%),
+    linear-gradient(#ffffff, #ffffff) 22% 80% / 58% 26% no-repeat;
+  animation: bl-nuage-flotte 6s ease-in-out infinite alternate;
+}
+@keyframes bl-nuage-flotte { from { translate: 0 0; } to { translate: -14px 0; } }
+
+/* Chiffres : une bulle colorée dans le coin, chiffre de la même couleur */
+.stat::after {
+  top: -18px; right: -18px; width: 74px; height: 74px; border-radius: 50%; transform: none; opacity: 1;
+  background: var(--primary-light);
+  background: color-mix(in srgb, var(--case, var(--case-vert)) 30%, #ffffff);
+}
+.stats .stat:nth-child(4n+1) { --chiffre: #c80067; }
+.stats .stat:nth-child(4n+2) { --chiffre: #a94a00; }
+.stats .stat:nth-child(4n+3) { --chiffre: #3d7a19; }
+.stats .stat:nth-child(4n+4) { --chiffre: #0a69ab; }
+.stat-val { color: var(--chiffre, var(--primary)); font-weight: 700; }
+
+/* Page vide : un petit nuage */
+.empty::before {
+  width: 54px; height: 26px; border-radius: 0; margin-bottom: 10px; opacity: 1; transform: none; box-shadow: none;
+  background:
+    radial-gradient(circle at 30% 70%, #bfe0f4 0 24%, transparent 25%),
+    radial-gradient(circle at 52% 42%, #bfe0f4 0 34%, transparent 35%),
+    radial-gradient(circle at 74% 66%, #bfe0f4 0 25%, transparent 26%),
+    linear-gradient(#bfe0f4, #bfe0f4) 26% 100% / 52% 34% no-repeat;
+}
+
+/* ---------- Boutons en pilule, champs arrondis ---------- */
+.btn { border-radius: 999px; }
+.btn-primary { box-shadow: 0 6px 14px rgba(10, 105, 171, 0.25); }
+.btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 6px rgba(10, 105, 171, 0.25); }
+.onglets button.actif { box-shadow: 0 6px 14px rgba(10, 105, 171, 0.25); }
+.field input, .field select, .field textarea, .card > select, .date-fixe, .message-box, .check { border-radius: 16px; }
+thead th { background: var(--doux); }
+
+/* ---------- Compte à rebours et jours de cantine : bulles rondes ---------- */
+.cr-case, .cr-case:nth-child(even) { border-radius: 50%; aspect-ratio: 1; justify-content: center; transform: none; padding: 2px; }
+.cantine-jour { border-radius: 22px; border-style: solid; }
+
+/* ---------- Espace Parents : cartes des enfants plus douces ---------- */
+.enfant-carte { border: 0; border-radius: 28px; }
+.enfant-puce { border-radius: 20px; }
+
+/* ---------- Barre d'onglets (téléphone) ---------- */
+.tabbar::before { display: none; }
+@media (max-width: 860px) {
+  .tabbar { border-top: 0; box-shadow: 0 -6px 20px rgba(10, 105, 171, 0.1); border-radius: 22px 22px 0 0; }
+  .tabbar a.active { color: var(--accent); }
+  .tabbar a.active .tab-ico { background: var(--accent-light); }
+  .welcome::after { width: 110px; height: 52px; left: auto; right: 14px; top: auto; bottom: 10px; }
+  .welcome { padding-bottom: 60px; }
+}
+@media (prefers-reduced-motion: reduce) { .welcome::after { animation: none; } }

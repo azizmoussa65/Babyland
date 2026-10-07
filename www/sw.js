@@ -1,8 +1,8 @@
 /* Service worker : l'application fonctionne hors-ligne une fois ouverte une première fois */
-const CACHE = 'babyland-v1';
+const CACHE = 'babyland-v2';
 const FICHIERS = [
   './', './index.html', './style.css', './config.js', './app.js', './manifest.webmanifest', './img/logo.png',
-  './babyland-logo.css', './fonts/nunito.woff2', './fonts/baloo2.woff2', ...['nuage', 'fille', 'garcon', 'garcon-devant', 'badge'].map(n => `./img/baby-${n}.png`),
+  './babyland-logo.css', './theme-babyland.css', './fonts/fredoka.woff2', './fonts/nunito.woff2', './fonts/baloo2.woff2', ...['nuage', 'fille', 'garcon', 'garcon-devant', 'badge'].map(n => `./img/baby-${n}.png`),
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'
 ];
 
