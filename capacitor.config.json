@@ -3,7 +3,7 @@
   "appName": "Baby Land",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#2a1659",
+    "backgroundColor": "#0d3b5e",
     "allowMixedContent": true,
     "adjustMarginsForEdgeToEdge": "auto"
   },
@@ -15,7 +15,7 @@
     },
     "StatusBar": {
       "style": "DARK",
-      "backgroundColor": "#2a1659",
+      "backgroundColor": "#0d3b5e",
       "overlaysWebView": false
     },
     "PushNotifications": {

@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
 // Couleurs de l'application : violet + bande de couleurs
-const BLEU = '#7c3aed', NUIT = '#2a1659', GRIS = '#5f5873', TRAIT = '#e7e0f3', FOND = '#f8f5fd';
-const CASES = ['#e0362c', '#ffd23f', '#d93ccf', '#6fd13a', '#7fe0f0', '#9b4cf0'];
+const BLEU = '#0a69ab', NUIT = '#0d3b5e', GRIS = '#55606e', TRAIT = '#d9e8f2', FOND = '#f3f8fc';
+const CASES = ['#e6007e', '#f7931e', '#8cc63f', '#29abe2', '#f472b6', '#7fd0f2'];   // couleurs des lettres « Baby Land »
 const LOGO = fileURLToPath(new URL('./logo.png', import.meta.url));
 const MARGE = 40;
 const ARABE = fileURLToPath(new URL('./polices/Amiri-Regular.ttf', import.meta.url));
@@ -41,7 +41,7 @@ function nouveauDocument(res, nomFichier, titre, layout = 'portrait') {
 function entete(doc, titre, sousTitre) {
   const l = doc.page.width;
   doc.rect(0, 0, l, 70).fill(NUIT);
-  // Bande des 6 cases de la marelle sous l'en-tête
+  // Bande aux couleurs des lettres du logo sous l'en-tête
   CASES.forEach((c, i) => doc.rect(i * l / CASES.length, 70, l / CASES.length + 1, 4).fill(c));
   // Logo de l'école dans un carré blanc arrondi
   let x = MARGE;
@@ -51,8 +51,8 @@ function entete(doc, titre, sousTitre) {
     x = MARGE + 64;
   }
   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(18).text('Baby ', x, 18, { continued: true })
-    .fillColor('#ffd23f').text('Land');
-  doc.font('Helvetica').fontSize(9).fillColor('#d9cff0').text('Espace Baby Land · Crèche & foyer de jour', x, 42);
+    .fillColor('#ffb347').text('Land');
+  doc.font('Helvetica').fontSize(9).fillColor('#cfe3f1').text('Espace Baby Land · Crèche & foyer de jour', x, 42);
   doc.fontSize(9).text(`Édité le ${aujourdhui()}`, MARGE, 42, { width: l - 2 * MARGE, align: 'right' });
   police(doc.fillColor(NUIT), titre, true).fontSize(16).text(titre, MARGE, 90, { wordSpacing: espaceMots(titre) });
   if (sousTitre) doc.font('Helvetica').fontSize(10).fillColor(GRIS).text(sousTitre, MARGE, doc.y + 2);

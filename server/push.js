@@ -65,7 +65,7 @@ export async function pousser(pour, type, texte) {
         tokens: lot.map(a => a.cle),
         notification: { title: titre, body: texte },
         data: { type },
-        android: { priority: 'high', notification: { icon: 'ic_stat_notif', color: '#7c3aed', channelId: 'lamarelle' } }
+        android: { priority: 'high', notification: { icon: 'ic_stat_notif', color: '#0a69ab', channelId: 'lamarelle' } }
       }).catch(() => null);
       r?.responses.forEach((x, j) => {
         const code = x.error?.code || '';
