@@ -1062,6 +1062,34 @@ input.montant { width: 90px; padding: 7px 8px; border: 1px solid var(--border); 
 @media (max-width: 380px) { .appel-grid { grid-template-columns: 1fr 1fr; } }
 
 /* ================= CLUBS ================= */
+/* Icône du menu « Clubs » : 🎼, ⚽ et 🔤 apparaissent l'un après l'autre (2 s chacun) */
+.ico-clubs { position: relative; display: block; width: 1.4em; height: 1.4em; }
+.ico-clubs i { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: grid; place-items: center; font-style: normal; line-height: 1;
+  opacity: 0; animation: ico-club 6s infinite; }
+.ico-clubs i:nth-child(2) { animation-name: ico-club-ballon; animation-delay: 2s; }
+.ico-clubs i:nth-child(3) { animation-delay: 4s; }
+@keyframes ico-club {
+  0% { opacity: 0; transform: scale(0.3) rotate(-35deg); }
+  5% { opacity: 1; transform: scale(1.25) rotate(10deg); }
+  10% { transform: scale(1) rotate(-4deg); }
+  14% { transform: rotate(0); }
+  28% { opacity: 1; transform: none; }
+  33.3%, 100% { opacity: 0; transform: translateY(-55%) scale(0.6); }
+}
+/* Le ballon arrive en roulant et rebondit */
+@keyframes ico-club-ballon {
+  0% { opacity: 0; transform: translateX(-90%) rotate(-360deg); }
+  7% { opacity: 1; transform: translateX(0) translateY(0) rotate(0); }
+  12% { transform: translateY(-35%); }
+  17% { transform: translateY(0); }
+  21% { transform: translateY(-15%); }
+  25%, 28% { opacity: 1; transform: none; }
+  33.3%, 100% { opacity: 0; transform: translateX(90%) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ico-clubs i { animation: none; }
+  .ico-clubs i:first-child { opacity: 1; }
+}
 .clubs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
 .club-carte { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--card); }
 .club-carte > img, .club-sans-image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }

@@ -444,6 +444,8 @@ function logout() { deconnecter(); }
 document.addEventListener('DOMContentLoaded', reprendreSession);
 
 // ================= MENU & NAVIGATION =================
+// Icône animée de « Clubs » : clé de sol, ballon et alphabet, l'un après l'autre (style.css : .ico-clubs)
+const ICONE_CLUBS = '<span class="ico-clubs" aria-hidden="true"><i>🎼</i><i>⚽</i><i>🔤</i></span>';
 const MENU_EQUIPE = [
   ['dashboard', '🏠', 'Tableau de bord'],
   ['appel', '✅', "Faire l'appel"],
@@ -455,7 +457,7 @@ const MENU_EQUIPE = [
   ['classes', '🏫', 'Classes'],
   ['emplois', '🗓️', 'Emplois du temps'],
   ['evenements', '🎉', 'Événements'],
-  ['clubs', '🎨', 'Clubs'],
+  ['clubs', ICONE_CLUBS, 'Clubs'],
   ['reclamations', '📩', 'Réclamations']
 ];
 const MENUS = {
@@ -468,7 +470,7 @@ const MENUS = {
     ['cantineParent', '🍽️', 'Cantine'],
     ['emploiParent', '🗓️', 'Emploi du temps'],
     ['evenements', '🎉', 'Événements'],
-    ['clubsParent', '🎨', 'Clubs'],
+    ['clubsParent', ICONE_CLUBS, 'Clubs'],
     ['messages', '✉️', 'Réclamations'],
     ['notifs', '🔔', 'Notifications'],
     ['profil', '👤', 'Mon profil']
