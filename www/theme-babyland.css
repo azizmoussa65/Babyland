@@ -1,5 +1,5 @@
 /* =========================================================
-   Thème « Espace Baby Land » : ciel et nuages
+   Thème « Espace Baby Land » : ciel et nuages, en rose et bleu (comme « Baby » et « Land »)
    Chargé après style.css : il ne change que l'apparence des pages de l'application
    (menu clair, bulles rondes, bandeau en ciel pastel avec nuages, boutons en pilule, police Fredoka).
    Contrastes vérifiés : textes ≥ 4,5:1 (grands chiffres ≥ 3:1).
@@ -16,6 +16,9 @@
   --radius: 24px;
   --shadow: 0 2px 4px rgba(10, 105, 171, 0.05), 0 10px 28px rgba(10, 105, 171, 0.08);
   --menu: #fffefb;            /* menu latéral clair */
+  /* Rose et bleu à tour de rôle (bulles du menu, bande colorée, chiffres, compte à rebours, jours de cantine…) */
+  --case-rouge: #e6007e; --case-jaune: #29abe2; --case-rose: #f472b6;
+  --case-vert: #5bc0eb; --case-cyan: #e6007e; --case-violet: #29abe2; --orange-kids: #f472b6;
   --menu-survol: #eaf5fc;
 }
 
@@ -62,9 +65,9 @@ body {
 /* ---------- Cartes et bandeau ---------- */
 .card, .stat { border: 0; }
 .card h3 { font-weight: 600; color: var(--sidebar); }
-/* Bandeau d'accueil : ciel pastel avec des nuages blancs */
+/* Bandeau d'accueil : du bleu au rose, avec des nuages blancs */
 .welcome {
-  background: linear-gradient(120deg, #cfeafb 0%, #e3e4fb 50%, #ffd9ea 100%);
+  background: linear-gradient(120deg, #bfe3fa 0%, #e6dcf7 50%, #ffcfe5 100%);
   color: var(--sidebar); border-radius: 28px; box-shadow: 0 10px 30px rgba(10, 105, 171, 0.12);
 }
 .welcome h3 { font-weight: 600; color: var(--sidebar); }
@@ -86,10 +89,8 @@ body {
   background: var(--primary-light);
   background: color-mix(in srgb, var(--case, var(--case-vert)) 30%, #ffffff);
 }
-.stats .stat:nth-child(4n+1) { --chiffre: #c80067; }
-.stats .stat:nth-child(4n+2) { --chiffre: #a94a00; }
-.stats .stat:nth-child(4n+3) { --chiffre: #3d7a19; }
-.stats .stat:nth-child(4n+4) { --chiffre: #0a69ab; }
+.stats .stat:nth-child(odd) { --chiffre: #c80067; }
+.stats .stat:nth-child(even) { --chiffre: #0a69ab; }
 .stat-val { color: var(--chiffre, var(--primary)); font-weight: 700; }
 
 /* Page vide : un petit nuage */
@@ -110,7 +111,25 @@ body {
 .field input, .field select, .field textarea, .card > select, .date-fixe, .message-box, .check { border-radius: 16px; }
 thead th { background: var(--doux); }
 
+/* Avatars : bleu et rose à tour de rôle (initiale ivoire lisible : contraste ≥ 4,5) */
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+1) { --av: #0a69ab; }
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+2) { --av: #c80067; }
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+3) { --av: #07507f; }
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+4) { --av: #9c004f; }
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+5) { --av: #0b5f9c; }
+:is(.enfant-puce, .enfant-carte, .eleve-carte, .appel-tuile, tbody tr):nth-child(6n+6) { --av: #b0005c; }
+
+/* Page de connexion : dégradé du bleu au rose, bulles roses et bleues */
+.login-page {
+  background: radial-gradient(circle at 15% 20%, rgba(244, 114, 182, 0.45), transparent 40%),
+              radial-gradient(circle at 85% 85%, rgba(41, 171, 226, 0.35), transparent 45%),
+              linear-gradient(150deg, #0a5c99 0%, #2f7fd0 45%, #c2307f 100%);
+}
+.fond-anime .bulle-bl.c2 { --bl: #f472b6; }
+.fond-anime .bulle-bl.c3 { --bl: #7fd0f2; }
+
 /* ---------- Compte à rebours et jours de cantine : bulles rondes ---------- */
+.cr-case:nth-child(3) { --case: var(--case-rose); }
 .cr-case, .cr-case:nth-child(even) { border-radius: 50%; aspect-ratio: 1; justify-content: center; transform: none; padding: 2px; }
 .cantine-jour { border-radius: 22px; border-style: solid; }
 

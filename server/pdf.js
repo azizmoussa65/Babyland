@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 
 // Couleurs de l'application : violet + bande de couleurs
 const BLEU = '#0a69ab', NUIT = '#0d3b5e', GRIS = '#55606e', TRAIT = '#d9e8f2', FOND = '#f3f8fc';
-const CASES = ['#e6007e', '#f7931e', '#8cc63f', '#29abe2', '#f472b6', '#7fd0f2'];   // couleurs des lettres « Baby Land »
+const CASES = ['#e6007e', '#29abe2', '#f472b6', '#7fd0f2', '#e6007e', '#29abe2'];   // rose et bleu, comme « Baby Land »
 const LOGO = fileURLToPath(new URL('./logo.png', import.meta.url));
 const MARGE = 40;
 const ARABE = fileURLToPath(new URL('./polices/Amiri-Regular.ttf', import.meta.url));

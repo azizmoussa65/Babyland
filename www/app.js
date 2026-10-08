@@ -1485,7 +1485,8 @@ function supprimerClub(id) {
 function inscrireClub(clubId, eleveId) {
   const c = DB.clubs.find(x => x.id === clubId), e = eleveDe(eleveId);
   if (!c || !e || !confirm(`Inscrire ${e.nom.split(' ')[0]} au club « ${c.nom} »${c.prix !== null ? ` (${prixClub(c.prix)})` : ''} ?`)) return;
-  action(api(`/clubs/${clubId}/inscriptions`, { method: 'POST', body: { eleveId } }), 'Inscription au club enregistrée ✔');
+  action(api(`/clubs/${clubId}/inscriptions`, { method: 'POST', body: { eleveId } }), `🎉 ${e.nom.split(' ')[0]} est inscrit(e) au club « ${c.nom} »`)
+    .then(r => r && confettisClubs());
 }
 function desinscrireClub(clubId, eleveId) {
   const c = DB.clubs.find(x => x.id === clubId), e = eleveDe(eleveId);
@@ -1498,7 +1499,7 @@ function carteClub(c, { gestion = false, enfant = null } = {}) {
   const inscrits = gestion && payant ? DB.clubInscriptions.filter(i => i.clubId === c.id)
     .map(i => ({ ...i, eleve: eleveDe(i.eleveId) })).filter(i => i.eleve).sort((a, b) => parNom(a.eleve, b.eleve)) : [];
   const pris = enfant && inscritClub(c.id, enfant.id);
-  const image = c.imageId ? `<img src="${urlFichier(c.imageId)}" alt="" loading="lazy" onclick="voirPhoto('${urlFichier(c.imageId)}')">` : '<div class="club-sans-image">🎨</div>';
+  const image = c.imageId ? `<img src="${urlFichier(c.imageId)}" alt="" loading="lazy" onclick="voirPhoto('${urlFichier(c.imageId)}')">` : `<div class="club-sans-image"><span class="club-icone">${iconeClub(c.nom)}</span><i>✨</i><i>✨</i><i>✨</i></div>`;
   let suite = '';
   if (!payant) suite = enfant ? `<p class="small club-ok">✔ ${prenom} en profite, sans inscription</p>` : '<p class="small muted">Pour tous les enfants, sans inscription</p>';
   else {
@@ -1525,6 +1526,33 @@ function carteClub(c, { gestion = false, enfant = null } = {}) {
     </div></div>`;
 }
 const grilleClubs = (liste, opts) => `<div class="clubs-grid">${liste.map(c => carteClub(c, opts)).join('')}</div>`;
+// Icône d'un club sans image, d'après son nom
+const ICONES_CLUB = [[/musi|chant|chorale|piano|guitare/i, '🎵'], [/dans|ballet/i, '💃'], [/foot|ballon|sport|gym/i, '⚽'],
+  [/dessin|peint|art|couleur/i, '🎨'], [/lect|livre|conte|histoire/i, '📚'], [/angl|fran|arab|langu|alphab|lettre/i, '🔤'],
+  [/nata|piscine|nage/i, '🏊'], [/théâtre|theatre|marionnette/i, '🎭'], [/cuisin|pâtiss|gâteau/i, '🧁'], [/jardin|plante|nature/i, '🌱'],
+  [/robot|info|code|scien/i, '🤖'], [/échec|echec|jeu|puzzle/i, '🧩'], [/yoga|relax/i, '🧘'], [/karat|judo|taekw/i, '🥋']];
+const iconeClub = nom => (ICONES_CLUB.find(([re]) => re.test(nom)) || [, '🎨'])[1];
+// Bandeau en haut de la page : 🎼 ⚽ 🔤 🎨 sautent l'un après l'autre
+function bandeauClubs(titre, texte) {
+  return `<div class="club-bandeau"><div><h3>${titre}</h3><p>${texte}</p></div>
+    <div class="club-bandeau-icones" aria-hidden="true"><span>🎼</span><span>⚽</span><span>🔤</span><span>🎨</span></div></div>`;
+}
+// Confettis roses et bleus quand un enfant est inscrit
+function confettisClubs() {
+  if (ANIM.calme) return;
+  const couleurs = ['#e6007e', '#29abe2', '#f472b6', '#7fd0f2', '#0a69ab', '#c80067'];
+  for (let k = 0; k < 46; k++) {
+    const p = document.createElement('span');
+    p.className = 'confetti-club';
+    p.style.cssText = `left:${50 + (Math.random() - 0.5) * 30}vw;background:${couleurs[k % couleurs.length]};${k % 3 ? '' : 'border-radius:50%;'}`;
+    document.body.appendChild(p);
+    const dx = (Math.random() - 0.5) * 90, haut = 25 + Math.random() * 30;
+    p.animate([{ transform: 'translate(0, 0) rotate(0)', opacity: 1 },
+      { transform: `translate(${dx * 0.5}vw, -${haut}vh) rotate(${Math.random() * 360}deg)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(${dx}vw, 10vh) rotate(${Math.random() * 900}deg)`, opacity: 0 }],
+    { duration: 1600 + Math.random() * 900, easing: 'cubic-bezier(.2, .6, .4, 1)' }).onfinish = () => p.remove();
+  }
+}
 
 // ================= ÉVÉNEMENTS (Administration → parents) =================
 async function creerEvenement(e) {
@@ -2306,7 +2334,8 @@ const VUES = {
   clubs() {
     const edite = clubEdite && DB.clubs.find(c => c.id === clubEdite);
     const inclus = clubsDe('inclus'), payants = clubsDe('payant');
-    return carte(edite ? `✏️ Modifier le club « ${esc(edite.nom)} »` : '🎨 Créer un club', `
+    return (edite ? '' : bandeauClubs('Les clubs de Baby Land', `${inclus.length} club(s) inclus · ${payants.length} club(s) payant(s) · ${DB.clubInscriptions.length} inscription(s)`))
+      + carte(edite ? `✏️ Modifier le club « ${esc(edite.nom)} »` : '🎨 Créer un club', `
         <p class="muted" style="margin-bottom:14px">Club <b>inclus</b> : tous les enfants en profitent, rien à faire pour les parents.
           Club <b>payant</b> : les parents inscrivent leur enfant depuis leur espace (page « Clubs ») et vous êtes prévenu(e).</p>
         <form class="grid-form" onsubmit="enregistrerClub(event${edite ? `,'${edite.id}'` : ''})">
@@ -2324,6 +2353,7 @@ const VUES = {
     if (!e) return sansEnfant();
     const inclus = clubsDe('inclus'), payants = clubsDe('payant'), prenom = esc(e.nom.split(' ')[0]);
     return selecteurEnfants()
+      + bandeauClubs(`Les clubs de ${prenom}`, 'Musique, sport, lettres, dessin… pour apprendre en s\'amusant !')
       + carte(`🎨 Clubs inclus pour ${prenom}`, inclus.length ? grilleClubs(inclus, { enfant: e }) : vide("Pas encore de club inclus."))
       + carte(`⭐ Clubs payants`, payants.length
         ? `<p class="muted" style="margin-bottom:12px">Choisissez les clubs où va <b>${prenom}</b> : l'école est prévenue tout de suite.</p>${grilleClubs(payants, { enfant: e })}`
