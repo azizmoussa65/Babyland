@@ -1136,6 +1136,7 @@ input.montant { width: 90px; padding: 7px 8px; border: 1px solid var(--border); 
 .club-corps strong { font-family: var(--titre); font-size: 18px; color: var(--sidebar); }
 .club-ok { color: var(--success); font-weight: 700; }
 .club-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding-top: 6px; }
+.club-classes .check input { accent-color: var(--primary); }
 .club-inscrits { width: 100%; }
 .club-inscrits summary { cursor: pointer; font-weight: 700; color: var(--primary); }
 .club-inscrits ul { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }

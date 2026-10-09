@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS clubs (
   horaire     TEXT,                              -- ex. « Mercredi 14 h – 15 h »
   prix        NUMERIC(8, 3),                     -- en dinars, par mois (clubs payants)
   places      INTEGER,                           -- nombre de places (vide = sans limite)
+  classes     TEXT[],                            -- clubs payants : classes (âges) qui peuvent s'inscrire (vide = toutes)
   image_id    UUID REFERENCES fichiers(id) ON DELETE SET NULL,
   cree_par    INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -302,3 +303,5 @@ ALTER TABLE cantine_semaines ADD COLUMN IF NOT EXISTS lundi DATE,
 UPDATE cantine_semaines SET lundi = date_trunc('week', created_at AT TIME ZONE 'Africa/Tunis')::date WHERE lundi IS NULL;
 -- Cantine : plus d'inscription « à l'année » ; le parent réserve les jours (table cantine_reservations)
 DROP TABLE IF EXISTS cantine_inscriptions;
+-- Clubs payants réservés à certaines classes (âges)
+ALTER TABLE clubs ADD COLUMN IF NOT EXISTS classes TEXT[];

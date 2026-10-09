@@ -1444,6 +1444,8 @@ const clubsDe = type => DB.clubs.filter(c => c.type === type);
 const inscritClub = (clubId, eleveId) => DB.clubInscriptions.some(i => i.clubId === clubId && i.eleveId === eleveId);
 const prixClub = p => (p === null || p === undefined ? '' : `${Number(p).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT / mois`);
 const placesRestantes = c => (c.places ? c.places - c.inscrits : null);
+// Club payant réservé à certaines classes (âges) ; sans classe choisie, il est ouvert à toutes
+const clubOuvertA = (c, eleve) => !c.classes || !c.classes.length || c.classes.includes(eleve.classe);
 
 // Formulaire (création « cl », modification « ce »)
 function champsClub(c, p) {
@@ -1458,6 +1460,10 @@ function champsClub(c, p) {
       <input id="${p}-prix" type="number" min="0" step="0.5" value="${c.prix ?? ''}" placeholder="Ex : 40"></div>
     <div class="field ${payant ? '' : 'hidden'}" id="${p}-champ-places"><label for="${p}-places">Places <span class="muted small">(vide = sans limite)</span></label>
       <input id="${p}-places" type="number" min="1" step="1" value="${c.places ?? ''}"></div>
+    <div class="field full ${payant ? '' : 'hidden'}" id="${p}-champ-classes"><label>Classes (âges) qui peuvent s'inscrire
+        <span class="muted small">(rien de coché = toutes les classes)</span></label>
+      <div class="checks club-classes">${CLASSES.map(nom => `<label class="check"><input type="checkbox" name="${p}-classe" value="${esc(nom)}"
+        ${(c.classes || []).includes(nom) ? 'checked' : ''}> ${esc(nom)}</label>`).join('')}</div></div>
     <div class="field full"><label for="${p}-description">Description</label>
       <textarea id="${p}-description" maxlength="1000" placeholder="Ce que font les enfants dans ce club…">${esc(c.description || '')}</textarea></div>
     <div class="field full"><label>Image <span class="muted small">(optionnelle)</span></label>
@@ -1466,12 +1472,13 @@ function champsClub(c, p) {
 }
 function majTypeClub(p) {
   const payant = val(p + '-type') === 'payant';
-  ['prix', 'places'].forEach(k => $(`${p}-champ-${k}`).classList.toggle('hidden', !payant));
+  ['prix', 'places', 'classes'].forEach(k => $(`${p}-champ-${k}`).classList.toggle('hidden', !payant));
 }
 async function enregistrerClub(e, id) {
   e.preventDefault();
   const p = id ? 'ce' : 'cl', form = new FormData();
   for (const k of ['nom', 'type', 'horaire', 'prix', 'places', 'description']) form.append(k, val(`${p}-${k}`));
+  form.append('classes', JSON.stringify([...document.querySelectorAll(`input[name="${p}-classe"]:checked`)].map(x => x.value)));
   if (!(await ajouterFichier(form, `${p}-image`, { imageSeulement: true }))) return;
   const r = await envoyerFormulaire(e, id ? '/clubs/' + id : '/clubs', form,
     id ? 'Club modifié ✔' : 'Club créé ✔ Les parents sont prévenus', id ? 'PUT' : 'POST');
@@ -1519,6 +1526,7 @@ function carteClub(c, { gestion = false, enfant = null } = {}) {
     <div class="club-corps">
       <div class="item-head"><strong>${esc(c.nom)}</strong>${payant ? `<span class="badge badge-wait">${esc(prixClub(c.prix) || 'Payant')}</span>` : '<span class="badge badge-ok">Inclus</span>'}</div>
       ${c.horaire ? `<p class="small">🕒 ${esc(c.horaire)}</p>` : ''}
+      ${gestion && payant ? `<p class="small">👶 ${c.classes && c.classes.length ? c.classes.map(esc).join(' · ') : 'Toutes les classes'}</p>` : ''}
       ${c.description ? `<p class="pub-texte">${esc(c.description)}</p>` : ''}
       ${suite}
       ${gestion ? `<div class="club-actions"><button class="btn btn-light btn-sm" onclick="clubEdite='${c.id}';rafraichir()">✏️ Modifier</button>
@@ -2351,13 +2359,15 @@ const VUES = {
   clubsParent() {
     const e = enfant();
     if (!e) return sansEnfant();
-    const inclus = clubsDe('inclus'), payants = clubsDe('payant'), prenom = esc(e.nom.split(' ')[0]);
+    // Clubs payants : seulement ceux ouverts à la classe (âge) de l'enfant (et ceux où il est déjà inscrit)
+    const inclus = clubsDe('inclus'), prenom = esc(e.nom.split(' ')[0]);
+    const payants = clubsDe('payant').filter(c => clubOuvertA(c, e) || inscritClub(c.id, e.id));
     return selecteurEnfants()
       + bandeauClubs(`Les clubs de ${prenom}`, 'Musique, sport, lettres, dessin… pour apprendre en s\'amusant !')
       + carte(`🎨 Clubs inclus pour ${prenom}`, inclus.length ? grilleClubs(inclus, { enfant: e }) : vide("Pas encore de club inclus."))
       + carte(`⭐ Clubs payants`, payants.length
         ? `<p class="muted" style="margin-bottom:12px">Choisissez les clubs où va <b>${prenom}</b> : l'école est prévenue tout de suite.</p>${grilleClubs(payants, { enfant: e })}`
-        : vide("Pas encore de club payant."));
+        : vide(`Pas de club payant pour la classe de ${prenom} (${esc(e.classe)}).`));
   },
 
   evenements() {
