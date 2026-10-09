@@ -1454,8 +1454,6 @@ function champsClub(c, p) {
       <input id="${p}-nom" required maxlength="80" value="${esc(c.nom || '')}" placeholder="Ex : Club de danse"></div>
     <div class="field"><label for="${p}-type">Type</label><select id="${p}-type" onchange="majTypeClub('${p}')">
       ${options([['inclus', 'Inclus (gratuit, pour tous les enfants)'], ['payant', 'Payant (le parent inscrit son enfant)']], c.type || 'inclus')}</select></div>
-    <div class="field"><label for="${p}-horaire">Jour et heure</label>
-      <input id="${p}-horaire" maxlength="120" value="${esc(c.horaire || '')}" placeholder="Ex : Mercredi 14 h – 15 h"></div>
     <div class="field ${payant ? '' : 'hidden'}" id="${p}-champ-prix"><label for="${p}-prix">Prix (DT / mois)</label>
       <input id="${p}-prix" type="number" min="0" step="0.5" value="${c.prix ?? ''}" placeholder="Ex : 40"></div>
     <div class="field ${payant ? '' : 'hidden'}" id="${p}-champ-places"><label for="${p}-places">Places <span class="muted small">(vide = sans limite)</span></label>
@@ -1477,7 +1475,7 @@ function majTypeClub(p) {
 async function enregistrerClub(e, id) {
   e.preventDefault();
   const p = id ? 'ce' : 'cl', form = new FormData();
-  for (const k of ['nom', 'type', 'horaire', 'prix', 'places', 'description']) form.append(k, val(`${p}-${k}`));
+  for (const k of ['nom', 'type', 'prix', 'places', 'description']) form.append(k, val(`${p}-${k}`));
   form.append('classes', JSON.stringify([...document.querySelectorAll(`input[name="${p}-classe"]:checked`)].map(x => x.value)));
   if (!(await ajouterFichier(form, `${p}-image`, { imageSeulement: true }))) return;
   const r = await envoyerFormulaire(e, id ? '/clubs/' + id : '/clubs', form,
@@ -1525,7 +1523,6 @@ function carteClub(c, { gestion = false, enfant = null } = {}) {
   return `<div class="club-carte ${c.type}">${image}
     <div class="club-corps">
       <div class="item-head"><strong>${esc(c.nom)}</strong>${payant ? `<span class="badge badge-wait">${esc(prixClub(c.prix) || 'Payant')}</span>` : '<span class="badge badge-ok">Inclus</span>'}</div>
-      ${c.horaire ? `<p class="small">🕒 ${esc(c.horaire)}</p>` : ''}
       ${gestion && payant ? `<p class="small">👶 ${c.classes && c.classes.length ? c.classes.map(esc).join(' · ') : 'Toutes les classes'}</p>` : ''}
       ${c.description ? `<p class="pub-texte">${esc(c.description)}</p>` : ''}
       ${suite}
@@ -2099,15 +2096,18 @@ const VUES = {
     const j = aujourdhui();
     const absJour = DB.absences.filter(a => a.date === j);
     const enAttente = DB.reclamations.filter(x => x.statut !== 'Traitée').length;
-    const stats = [['Élèves', DB.eleves.length], ['Classes', DB.classes.length],
-      ["Absents aujourd'hui", new Set(absJour.map(a => a.eleveId)).size], ['Messages des parents en attente', enAttente],
-      ["Repas à la cantine aujourd'hui", DB.cantineReservations.filter(r => r.jour === j).length]];
+    // [libellé, valeur, page ouverte au clic]
+    const stats = [['Élèves', DB.eleves.length, 'eleves'], ['Classes', DB.classes.length, 'classes'],
+      ["Absents aujourd'hui", new Set(absJour.map(a => a.eleveId)).size, 'appel'], ['Messages des parents en attente', enAttente, 'reclamations'],
+      ["Repas à la cantine aujourd'hui", DB.cantineReservations.filter(r => r.jour === j).length, 'cantine'],
+      ['Clubs', DB.clubs.length, 'clubs']];
     // Appel du jour : classes déjà faites / à faire
     const appelFait = new Set(DB.absences.filter(a => a.date === j).map(a => a.classe));
     const coursJour = DB.publications.filter(p => p.date === j && p.type === 'cours');
     const prochains = evenementsAVenir().slice(0, 2);
     return `<div class="welcome"><h3>Bonjour ${esc(user.nom)} 👋</h3><p>Bienvenue dans votre espace ${ROLES[user.role]}.</p></div>
-      <div class="stats">${stats.map(([l, v]) => `<div class="stat"><span class="stat-val">${esc(v)}</span><span class="stat-lbl">${l}</span></div>`).join('')}</div>
+      <div class="stats">${stats.map(([l, v, page]) => `<div class="stat stat-lien" role="button" tabindex="0" onclick="go('${page}')"
+        onkeydown="if(event.key==='Enter')go('${page}')"><span class="stat-val">${esc(v)}</span><span class="stat-lbl">${l}</span></div>`).join('')}</div>
       ${carte(`📋 Aujourd'hui`, `<div class="jour-classes">${DB.classes.map(c => {
         const nbCours = coursJour.filter(p => p.classe === c.nom).length;
         const nbAbs = new Set(absJour.filter(a => a.classe === c.nom).map(a => a.eleveId)).size;

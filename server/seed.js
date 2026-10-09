@@ -30,7 +30,7 @@ export async function initialiser({ reset = false } = {}) {
 
   const mdp = await bcrypt.hash('1234', 10);
   await q(`INSERT INTO users (nom, email, telephone, password, role) VALUES
-    ('M. Karim Trabelsi', 'admin@ecole.tn', '98 111 222', $1, 'admin')`, [mdp]);
+    ('Mme Sarra Abed', 'admin@ecole.tn', '98 111 222', $1, 'admin')`, [mdp]);
 
   for (const nom of ['Classe A', 'Classe B', 'Classe C'])
     await q('INSERT INTO classes (nom) VALUES ($1) ON CONFLICT DO NOTHING', [nom]);

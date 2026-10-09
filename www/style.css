@@ -491,6 +491,9 @@ button:disabled { opacity: 0.6; cursor: wait; }
   position: relative;
   overflow: hidden;
 }
+/* Tableau de bord : chaque chiffre ouvre sa page */
+.stat-lien { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.stat-lien:hover, .stat-lien:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12); }
 /* Une case de la marelle dans le coin de chaque chiffre */
 .stat::after {
   content: ''; position: absolute; top: -12px; right: -12px; width: 52px; height: 52px; border-radius: 14px;
